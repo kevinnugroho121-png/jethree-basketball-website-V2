@@ -268,15 +268,20 @@
             const passInput = document.getElementById('password');
             const submitBtn = document.getElementById('submitBtn');
 
-            // --- LOGIKA TANGGAL LAHIR ---
-            tglInput.addEventListener('change', function() {
-                const birthDate = new Date(this.value);
+
+
+            // --- REVISI GABUNGAN: LOGIKA TANGGAL LAHIR & GENDER ATLET ---
+            const genderSelect = document.querySelector('select[name="jenis_kelamin"]');
+
+            function hitungKategoriOtomatis() {
+                if (!tglInput.value) return; // Lewati jika tanggal belum diisi
+
+                const birthDate = new Date(tglInput.value);
                 const today = new Date();
                 
-                // Cek Masa Depan
                 if (birthDate >= today) {
                     tglError.classList.remove('hidden');
-                    this.value = '';
+                    tglInput.value = '';
                     ageFeedback.classList.add('hidden');
                     schoolRec.classList.add('hidden');
                     katDisplay.value = 'Tanggal Invalid';
@@ -284,39 +289,53 @@
                 }
                 tglError.classList.add('hidden');
 
-                // Hitung Umur
+                // Hitung Umur Riil
                 let age = today.getFullYear() - birthDate.getFullYear();
                 const m = today.getMonth() - birthDate.getMonth();
                 if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
                     age--;
                 }
 
-                // Tampilkan Umur
                 ageFeedback.classList.remove('hidden');
                 ageVal.innerText = age;
 
-                // Tentukan Kategori (SAMA PERSIS DENGAN RENTANG KU ADMIN)
-                let kategori = '';
-                if (age <= 10) kategori = 'KU-10';       // 5 - 10 Tahun
-                else if (age <= 12) kategori = 'KU-12';  // 11 - 12 Tahun
-                else if (age <= 14) kategori = 'KU-14';  // 13 - 14 Tahun
-                else if (age <= 16) kategori = 'KU-16';  // 15 - 16 Tahun
-                else if (age <= 18) kategori = 'KU-18';  // 17 - 18 Tahun
-                else kategori = 'Senior';                // > 18 Tahun
+                // 1. Tentukan Base Kategori Usia
+                let baseKategori = '';
+                if (age <= 10) baseKategori = 'KU-10';
+                else if (age <= 12) baseKategori = 'KU-12';
+                else if (age <= 14) baseKategori = 'KU-14';
+                else if (age <= 16) baseKategori = 'KU-16';
+                else if (age <= 18) baseKategori = 'KU-18';
+                else baseKategori = 'Senior';
 
-                katDisplay.value = kategori;
-                katInput.value = kategori;
+                // 2. Suntik Logika Gender Suffix (Laki-laki -> Putra, Perempuan -> Putri)
+                let genderSuffix = '';
+                if (baseKategori !== 'Senior' && genderSelect.value !== '') {
+                    genderSuffix = (genderSelect.value === 'Laki-laki') ? ' Putra' : ' Putri';
+                }
 
-                // Rekomendasi Sekolah (SINKRON DENGAN RENTANG KU & DROPDOWN)
+                // 3. Gabungkan Hasil Akhir ke Input Hidden (Untuk dikirim ke Laravel Database)
+                let kategoriFinal = baseKategori + genderSuffix;
+                katDisplay.value = kategoriFinal;
+                katInput.value = kategoriFinal;
+
+                // Rekomendasi Jenjang Sekolah
                 let jenjang = '-';
-                if(age >= 5 && age <= 10) jenjang = 'SD / MI';              // Berlaku untuk KU-10
-                else if(age >= 11 && age <= 14) jenjang = 'SMP / MTs';      // Berlaku untuk KU-12 & KU-14
-                else if(age >= 15 && age <= 18) jenjang = 'SMA / SMK / MA'; // Berlaku untuk KU-16 & KU-18
-                else if(age > 18) jenjang = 'Kuliah';                       // Berlaku untuk Senior
+                if(age >= 5 && age <= 10) jenjang = 'SD / MI';
+                else if(age >= 11 && age <= 14) jenjang = 'SMP / MTs';
+                else if(age >= 15 && age <= 18) jenjang = 'SMA / SMK / MA';
+                else if(age > 18) jenjang = 'Kuliah';
                 
                 schoolRec.classList.remove('hidden');
                 recVal.innerText = jenjang;
-            });
+            }
+
+            // Daftarkan fungsi ke 2 trigger sekaligus (Anti-Miss)
+            tglInput.addEventListener('change', hitungKategoriOtomatis);
+            genderSelect.addEventListener('change', hitungKategoriOtomatis);
+
+
+            
 
             // --- LOGIKA PASSWORD VALIDASI (REALTIME) ---
             passInput.addEventListener('input', function() {

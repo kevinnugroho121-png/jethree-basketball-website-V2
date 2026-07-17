@@ -22,18 +22,18 @@ class ApiPelatihController extends Controller
         $user = Auth::user();
         $pelatih = Pelatih::where('user_id', $user->id)->first();
 
-        // Data default ambil dari User Login
+        // Data default ambil dari User Login (Disesuaikan Hak Istimewa Owner)
         $data = [
             'nama_lengkap' => $user->name, 
-            'email'        => $user->email, // PENTING: Untuk Tampilan Mobile
-            'role'         => 'PELATIH',
+            'email'        => $user->email, 
+            'role'         => $user->role === 'owner' ? 'PELATIH DAN OWNER' : 'PELATIH',
             'no_hp'        => '-',
             'alamat'       => '-',
             'foto'         => null,
             'lisensi'      => '-',
             'tempat_lahir' => '-',
             'tanggal_lahir'=> '-',
-            'status'       => 'Non-Aktif', // PENTING: Default status
+            'status'       => $user->role === 'owner' ? 'Aktif' : 'Non-Aktif', 
         ];
 
         // Jika data di tabel pelatih ada, timpa data default
@@ -45,8 +45,16 @@ class ApiPelatihController extends Controller
             $data['lisensi']       = $pelatih->lisensi ?? '-';
             $data['tempat_lahir']  = $pelatih->tempat_lahir ?? '-';
             $data['tanggal_lahir'] = $pelatih->tanggal_lahir ?? '-';
-            $data['status']        = $pelatih->status ?? 'Non-Aktif'; // Ambil status real
+            
+            // 💡 SUNTIKAN BARU: Masukkan data dari tabel pelatihs agar terkirim ke aplikasi mobile
+            $data['kategori_fokus'] = $pelatih->kategori_fokus ?? '';
+            $data['gender_fokus']   = $pelatih->gender_fokus ?? '';
+            
+            // Khusus owner, status akun wajib terkunci 'Aktif'
+            $data['status']        = $user->role === 'owner' ? 'Aktif' : ($pelatih->status ?? 'Non-Aktif');
         }
+
+
 
         return response()->json([
             'success' => true,
@@ -60,9 +68,11 @@ class ApiPelatihController extends Controller
         $user = Auth::user();
         $pelatih = Pelatih::where('user_id', $user->id)->first();
 
+
         $namaPelatih = $pelatih ? $pelatih->nama_lengkap : $user->name;
 
-        if (!$pelatih) {
+        // Jika data pelatih kosong dan BUKAN owner, baru tolak
+        if (!$pelatih && $user->role !== 'owner') {
              return response()->json([
                 'success' => true,
                 'pelatih_nama' => $namaPelatih, 
@@ -72,22 +82,41 @@ class ApiPelatihController extends Controller
         }
 
         // Ambil Jadwal Hari Ini
-        Carbon::setLocale('id'); // Pastikan server support locale ID
-        
-        // Menggunakan format tanggal Y-m-d untuk akurasi lebih baik daripada nama hari
+        Carbon::setLocale('id'); 
         $todayDate = Carbon::now()->format('Y-m-d');
         
-        $jadwal_hari_ini = Jadwal::where('pelatih_id', $pelatih->id)
-                                 ->where('tanggal', $todayDate) // Ubah 'hari' jadi 'tanggal' agar lebih presisi
-                                 ->first();
+        // --- STRATEGI AMBIL JADWAL HARI INI BERDASARKAN ROLE ---
+        if ($user->role === 'owner') {
+            // Owner melihat jadwal pertama apa saja yang ada di akademi hari ini secara global
+            $jadwal_hari_ini = Jadwal::where('tanggal', $todayDate)->first();
+            
+            if (!$jadwal_hari_ini) {
+                $namaHari = Carbon::now()->isoFormat('dddd');
+                $jadwal_hari_ini = Jadwal::where('hari', $namaHari)->first();
+            }
+        } else {
+            // Pelatih biasa dikunci berdasarkan kategori diampunya
+            $kategoriDiampu = $pelatih->kategoris()->pluck('kategori')->toArray();
+            
+            $queryHariIni = Jadwal::where('pelatih_id', $pelatih->id)->where('tanggal', $todayDate);
+            
+            if (!empty($kategoriDiampu)) {
+                $queryHariIni->whereIn('kategori', $kategoriDiampu);
+            }
+            
+            $jadwal_hari_ini = $queryHariIni->first();
 
-        // Fallback: Jika pakai kolom 'hari', pastikan nama harinya sesuai (Senin, Selasa, dll)
-        if (!$jadwal_hari_ini) {
-             $namaHari = Carbon::now()->isoFormat('dddd');
-             $jadwal_hari_ini = Jadwal::where('pelatih_id', $pelatih->id)
-                                      ->where('hari', $namaHari)
-                                      ->first();
+            if (!$jadwal_hari_ini) {
+                 $namaHari = Carbon::now()->isoFormat('dddd');
+                 $jadwal_hari_ini = Jadwal::where('pelatih_id', $pelatih->id)
+                                           ->whereIn('kategori', $kategoriDiampu)
+                                           ->where('hari', $namaHari)
+                                           ->first();
+            }
         }
+
+
+
 
         return response()->json([
             'success' => true,
@@ -107,23 +136,43 @@ class ApiPelatihController extends Controller
         $user = Auth::user();
         $pelatih = Pelatih::where('user_id', $user->id)->first();
 
-        if (!$pelatih) {
+
+
+
+        // Jika data pelatih kosong dan BUKAN owner, baru kembalikan data kosong
+        if (!$pelatih && $user->role !== 'owner') {
              return response()->json(['success' => true, 'data' => []]);
         }
 
-        $namaUntukJadwal = $pelatih->nama_lengkap;
-        
-     
-     
-        // [PERUBAHAN]: Cek permintaan kalender (?all=true)
+        $namaUntukJadwal = $pelatih ? $pelatih->nama_lengkap : $user->name;
         $isAll = $request->query('all') == 'true'; 
-        
         $today = \Carbon\Carbon::now('Asia/Jakarta')->toDateString();
 
-        // --- SIHIR KUERI AUTO-SORT & HITUNG REKAP ---
-        $query = Jadwal::where('pelatih_id', $pelatih->id)
-            ->addSelect(['jadwals.*', 
+        // --- STRATEGI KUERI BERDASARKAN ROLE (Poin 62) ---
+        if ($user->role === 'owner') {
+            // Khusus Owner: Buka gembok akses, tarik semua jadwal latihan tanpa filter kategori/id pelatih
+            $query = Jadwal::query();
+
+        } else {
+            // Ambil daftar kategori dari tabel jembatan
+            $kategoriDiampu = $pelatih->kategoris()->pluck('kategori')->toArray();
+            
+            // Query dasar: Ambil jadwal yang emang jatah ID pelatih ini
+            $query = Jadwal::where('pelatih_id', $pelatih->id);
+            
+            // SMART FALLBACK: Jika admin sudah memetakan kategori, filter secara ketat. 
+            // Jika belum (data lama/belum disetting), loloskan filter whereIn agar tidak blank.
+            if (!empty($kategoriDiampu)) {
+                $query->whereIn('kategori', $kategoriDiampu);
+            }
+        }
+
+        // --- SIHIR KUERI AUTO-SORT & HITUNG REKAP BUNDLING ---
+        $query->addSelect(['jadwals.*',
+            
                 'total_anak' => \App\Models\Atlet::selectRaw('COUNT(*)')
+
+
                     ->whereColumn('atlets.kategori', 'jadwals.kategori')
                     ->where('atlets.status', 'Aktif'),
                 
@@ -221,6 +270,7 @@ class ApiPelatihController extends Controller
     // 5. SIMPAN ABSENSI & NILAI
     public function storeAbsensi(Request $request)
     {
+
         $request->validate([
             'jadwal_id' => 'required',
             'atlet_id' => 'required',
@@ -230,7 +280,9 @@ class ApiPelatihController extends Controller
             'shoot' => 'nullable|integer',
             'iq' => 'nullable|integer',
             'catatan' => 'nullable|string',
+            'deskripsi_latihan' => 'required|string', // <--- TAMBAHKAN INI (Gembok penolak simpan jika kosong)
         ]);
+
 
         try {
             DB::beginTransaction();
@@ -239,6 +291,11 @@ class ApiPelatihController extends Controller
             if (!$jadwal) {
                 return response()->json(['success' => false, 'message' => 'Jadwal tidak valid'], 404);
             }
+
+            // Otomatis update deskripsi latihan di tabel jadwal agar bisa diintip oleh atlet (Poin 13)
+            $jadwal->update([
+                'materi' => $request->deskripsi_latihan
+            ]);
 
             // Gunakan tanggal dari jadwal, bukan tanggal hari ini
             // Ini penting agar absen jadwal susulan tetap masuk ke tanggal yang benar
@@ -249,26 +306,50 @@ class ApiPelatihController extends Controller
                             ->where('atlet_id', $request->atlet_id)
                             ->first();
 
+            // ==================== KODE YANG BENAR (GANTI DENGAN INI) ====================
             if (!$absen) {
                 $absen = new Absensi();
                 $absen->jadwal_id = $request->jadwal_id;
                 $absen->atlet_id = $request->atlet_id;
             }
 
+            // --- DETEKSI DINAMIS SIAPA YANG MELATIH DI LAPANGAN ---
+            $userLog = $request->user(); 
+            $pelatihHadirId = null;
+
+            // 1. Jika Coach Irul memilih dari dropdown Flutter
+            if ($request->has('pelatih_id') && $request->pelatih_id != null) {
+                $pelatihHadirId = $request->pelatih_id;
+            } 
+            // 2. Jika pelatih biasa (dropdown sembunyi), otomatis ambil dari session loginnya
+            else {
+                $pelatihAsli = Pelatih::where('user_id', $userLog->id)->first();
+                $pelatihHadirId = $pelatihAsli ? $pelatihAsli->id : null;
+            }
+
             // Update data
-            $absen->tanggal_latihan = $tanggalAbsen; // Pastikan tanggal sesuai jadwal
+            $absen->tanggal_latihan = $tanggalAbsen; 
             $absen->status = $request->status;
             
+            // SUNTIKAN FIELD BARU: Catat pelatih yang bereksekusi di lapangan hari ini
+            $absen->pelatih_hadir_id = $pelatihHadirId; 
+// ============================================================================
+            
+            // Cek apakah sekarang sudah memasuki akhir bulan (Mulai tanggal 25 s/d akhir bulan)
+            $hariIni = \Carbon\Carbon::now('Asia/Jakarta')->day;
+            $isAkhirBulan = ($hariIni >= 25);
+
             if ($request->status == 'H') {
-                $absen->nilai_dribble = $request->dribble;
-                $absen->nilai_pass = $request->pass;
-                $absen->nilai_shoot = $request->shoot;
-                $absen->nilai_iq = $request->iq;
+                // Nilai angka hanya disimpan jika diinput di tanggal 25 ke atas (Poin 14)
+                $absen->nilai_dribble = $isAkhirBulan ? $request->dribble : null;
+                $absen->nilai_pass    = $isAkhirBulan ? $request->pass : null;
+                $absen->nilai_shoot   = $isAkhirBulan ? $request->shoot : null;
+                $absen->nilai_iq      = $isAkhirBulan ? $request->iq : null;
             } else {
                 $absen->nilai_dribble = null;
-                $absen->nilai_pass = null;
-                $absen->nilai_shoot = null;
-                $absen->nilai_iq = null;
+                $absen->nilai_pass    = null;
+                $absen->nilai_shoot   = null;
+                $absen->nilai_iq      = null;
             }
 
             $absen->catatan = $request->catatan;

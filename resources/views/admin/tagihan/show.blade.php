@@ -106,6 +106,7 @@
                                 <th class="px-4 py-3 font-semibold text-right">Nominal</th>
                                 <th class="px-3 py-3 font-semibold text-center">Tgl Bayar</th>
                                 <th class="px-3 py-3 font-semibold text-center w-28">Status</th>
+                                <th class="px-3 py-3 font-semibold text-center w-32">Metode</th> <!-- 💡 Tambahan Kolom Baru -->
                                 <th class="px-3 py-3 font-semibold text-center w-44">Aksi</th>
                             </tr>
                         </thead>
@@ -131,7 +132,7 @@
                                     </td>
                                     
                                     <td class="px-3 py-2 text-center text-xs text-gray-600">
-                                        {{ $tagihan->tanggal_lunas ? \Carbon\Carbon::parse($tagihan->tanggal_lunas)->format('d/m/Y') : '-' }}
+                                        {{ $tagihan->tanggal_lunas ? \Carbon\Carbon::parse($tagihan->tanggal_lunas)->format('d/m/Y') : ($tagihan->status == 'Lunas' ? \Carbon\Carbon::parse($tagihan->updated_at)->format('d/m/Y') : '-') }}
                                     </td>
 
                                     <td class="px-3 py-2 text-center">
@@ -141,6 +142,20 @@
                                             <span class="inline-block text-[10px] font-bold px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">DIPROSES</span>
                                         @else
                                             <span class="inline-block text-[10px] font-bold px-2 py-1 rounded bg-red-100 text-red-800 border border-red-200">BELUM</span>
+                                        @endif
+                                    </td>
+
+                                    <!-- 💡 Kolom Metode Pembayaran Baru (Deteksi Lebih Akurat) -->
+                                    <td class="px-3 py-2 text-center text-xs">
+                                        @if($tagihan->status == 'Lunas')
+                                            {{-- SINKRONISASI: Jika ada file bukti gambar ATAU metodenya klop, maka itu pasti Manual --}}
+                                            @if($tagihan->bukti_pembayaran || in_array($tagihan->metode_pembayaran, ['Tunai (Cash)', 'Transfer Bank', 'Transfer (Via Mobile)']))
+                                                <span class="inline-block font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200">Manual</span>
+                                            @else
+                                                <span class="inline-block font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700 border border-blue-200">Midtrans</span>
+                                            @endif
+                                        @else
+                                            -
                                         @endif
                                     </td>
 
@@ -186,7 +201,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-10 text-center text-gray-400">
+                                    <td colspan="7" class="px-6 py-10 text-center text-gray-400"> <!-- 💡 Ubah 6 menjadi 7 -->
                                         <div class="flex flex-col items-center gap-2">
                                             <span class="text-4xl">📭</span>
                                             <p class="font-medium">Atlet ini belum memiliki riwayat tagihan.</p>
@@ -202,18 +217,30 @@
         </div>
     </div>
 
-    {{-- ========================================== --}}
+    {{{-- ========================================== --}}
     {{-- SCRIPT JAVASCRIPT UNTUK KUNCI KOTAK BULAN --}}
     {{-- ========================================== --}}
+    
+    {{-- Kotak sembunyi untuk mengirim data ke JS tanpa bikin editor eror --}}
+    <div id="bridge-data-atlet" 
+         data-existing='@json($tagihans->map->only(["bulan", "tahun"]))'
+         data-tahun="{{ \Carbon\Carbon::parse($atlet->created_at)->year }}"
+         data-bulan="{{ \Carbon\Carbon::parse($atlet->created_at)->month }}"
+         style="display: none;">
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Data Tagihan & Data Atlet
-            const existingTagihans = @json($tagihans->map->only(['bulan', 'tahun']));
+
+            // Ambil data dari element HTML jembatan di atas
+            const bridgeData = document.getElementById('bridge-data-atlet');
+            
+            const existingTagihans = JSON.parse(bridgeData.dataset.existing);
             const namaBulanList = {1:'Januari', 2:'Februari', 3:'Maret', 4:'April', 5:'Mei', 6:'Juni', 7:'Juli', 8:'Agustus', 9:'September', 10:'Oktober', 11:'November', 12:'Desember'};
             
-            // [REVISI] Ambil Tahun & Bulan Atlet Didaftarkan
-            const tahunDaftar = {{ \Carbon\Carbon::parse($atlet->created_at)->year }};
-            const bulanDaftar = {{ \Carbon\Carbon::parse($atlet->created_at)->month }};
+            // Ambil Tahun & Bulan Atlet Didaftarkan dengan aman
+            const tahunDaftar = parseInt(bridgeData.dataset.tahun);
+            const bulanDaftar = parseInt(bridgeData.dataset.bulan);
             
             const selectTahun = document.getElementById('pilih_tahun');
             const btnCentangSemua = document.getElementById('btn_centang_semua');

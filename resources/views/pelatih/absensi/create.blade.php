@@ -49,12 +49,26 @@
             </div>
         </div>
 
+
+
         {{-- 2. FORM UTAMA (Scrollable Area) --}}
         <form action="{{ route('absensi.store', $jadwal->id) }}" method="POST" class="flex-grow flex flex-col overflow-hidden relative">
             @csrf
-            
-            {{-- Container Tabel --}}
+
+            {{-- REVISI POIN 13: KOTAK INPUT DESKRIPSI MATELI LATIHAN WAJIB HARIAN --}}
+            <div class="bg-white border-b border-gray-100 p-4 shrink-0">
+                <label for="deskripsi_latihan" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                    📝 Menu / Ringkasan Materi Latihan Hari Ini <span class="text-red-500">*Wajib Diisi</span>
+                </label>
+                <textarea id="deskripsi_latihan" name="deskripsi_latihan" rows="2" required
+                    class="w-full text-xs rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    placeholder="Contoh: Pemantapan pola defense 2-3, transisi fastbreak, dan ditutup dengan conditioning drill..."></textarea>
+            </div>
+
+            {{-- Container Table --}}
             <div class="flex-grow overflow-y-auto bg-white">
+
+
                 <table class="w-full text-sm text-left text-gray-500 relative">
                     {{-- Sticky Header --}}
                     <thead class="text-xs text-white uppercase bg-gray-800 sticky top-0 z-10 shadow-md">
@@ -163,18 +177,24 @@
                 </table>
             </div>
 
-            {{-- 3. FOOTER STICKY (Tombol Simpan) --}}
-            <div class="p-4 bg-white border-t border-gray-200 flex justify-end gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-30">
-                <a href="{{ route('jadwal.index') }}" class="px-6 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200 transition">
+
+
+            {{-- 3. FOOTER STICKY (Tombol Simpan - Sudah disamakan tinggi h-10 & text-xs) --}}
+            <div class="p-4 bg-white border-t border-gray-200 flex justify-end items-center gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-30">
+                <a href="{{ route('jadwal.index') }}" 
+                    class="h-10 px-5 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg text-xs uppercase tracking-wider transition">
                     Batal
                 </a>
                 @if($atlets->count() > 0)
-                    <button type="submit" class="px-8 py-2.5 bg-indigo-700 text-white font-bold rounded-lg shadow-lg hover:bg-indigo-800 hover:shadow-xl transition transform hover:-translate-y-0.5 flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                        SIMPAN DATA
+                    <button type="submit" 
+                        class="h-10 px-6 inline-flex items-center justify-center bg-indigo-700 hover:bg-indigo-800 text-white font-bold rounded-lg text-xs uppercase tracking-wider shadow-md transition gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                        SIMPAN DATA ABSENSI
                     </button>
                 @endif
             </div>
+
+
 
         </form>
     </div>

@@ -35,7 +35,7 @@
                                 class="datepicker mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
                         </div>
 
-                        {{-- 2. KATEGORI & GENDER (Pilihan Wajib Admin) --}}
+                        {{-- 2. KATEGORI & PELATIH --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             {{-- Kategori --}}
                             <div>
@@ -50,14 +50,14 @@
                                 </select>
                             </div>
 
-                            {{-- Gender Latihan (⚡ Menggantikan Dropdown Pelatih Lama) --}}
+                            {{-- Pelatih --}}
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Gender Latihan</label>
-                                <select name="gender" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
-                                    <option value="">-- Pilih Gender --</option>
-                                    @foreach(['Putra', 'Putri', 'Campuran'] as $gen)
-                                        <option value="{{ $gen }}" {{ (old('gender', $jadwal->gender ?? ($jadwal->pelatih ? $jadwal->pelatih->gender_fokus : '')) == $gen) ? 'selected' : '' }}>
-                                            {{ $gen }}
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Pelatih Bertugas</label>
+                                <select name="pelatih_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                                    <option value="">-- Pilih Coach --</option>
+                                    @foreach($pelatihs as $pelatih)
+                                        <option value="{{ $pelatih->id }}" {{ (old('pelatih_id', $jadwal->pelatih_id) == $pelatih->id) ? 'selected' : '' }}>
+                                            Coach {{ $pelatih->nama_lengkap }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -79,6 +79,14 @@
                             </div>
                         </div>
 
+                        {{-- [BARU] 4. MATERI LATIHAN (Textarea) --}}
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">📝 Materi Latihan</label>
+                            <textarea name="materi" rows="3" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
+                                placeholder="Contoh: Fokus Defense, Latihan Dribble, Scrimmage 5v5..." required>{{ old('materi', $jadwal->materi) }}</textarea>
+                            <p class="text-xs text-gray-500 mt-1">Ubah materi latihan jika diperlukan.</p>
+                        </div>
 
                         {{-- 5. LOKASI & STATUS --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

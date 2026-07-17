@@ -102,6 +102,23 @@ class DashboardController extends Controller
         $donut_data = $kategori_data->pluck('total')->toArray();
 
         // ---------------------------------------------------------
+        // 4b. DATA GRAFIK "TREN KEHADIRAN BULANAN COACH" (Poin 50)
+        // ---------------------------------------------------------
+        $coach_attendance_data = [];
+        
+        for ($m = 1; $m <= 12; $m++) {
+            // LOGIKA BARU: Menghitung berapa banyak sesi latihan unik (jadwal_id) 
+            // yang telah terlaksana di tabel 'absensis' menggunakan kolom 'tanggal_latihan'
+            $total_hadir_bulan_ini = DB::table('absensis')
+                ->whereYear('tanggal_latihan', $filter_tahun)
+                ->whereMonth('tanggal_latihan', $m)
+                ->distinct('jadwal_id')
+                ->count('jadwal_id');
+                
+            $coach_attendance_data[] = $total_hadir_bulan_ini;
+        }
+
+        // ---------------------------------------------------------
         // 5. RIWAYAT TRANSAKSI TERBARU (Tabel Bawah)
         // ---------------------------------------------------------
         // Ambil dari Tagihan yang sudah lunas, urutkan dari yang terbaru diverifikasi
@@ -128,6 +145,7 @@ class DashboardController extends Controller
             'total_tagihan_bulan',  // Rincian kotak total tagihan
             'donut_labels',         // Label kategori (KU-10, KU-12, dll)
             'donut_data',           // Angka total per kategori
+            'coach_attendance_data', // [BARU] Suplai data grafik tren kehadiran coach (Poin 50)
             'riwayat_terbaru'       // Wajib untuk Tabel Riwayat
         ));
     }

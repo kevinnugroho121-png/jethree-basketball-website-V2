@@ -68,6 +68,15 @@
             <th>Lisensi Melatih</th>
             <td>{{ $pelatih->lisensi ?? 'Belum ada lisensi' }}</td>
         </tr>
+        {{-- ⚡ BARU: DATA FOKUS KELAS DAN GENDER PADA CETAKAN PDF --}}
+        <tr>
+            <th>Kategori Umur Latihan</th>
+            <td>{{ $pelatih->kategori_fokus ?? '-' }}</td>
+        </tr>
+        <tr>
+            <th>Gender Fokus Latihan</th>
+            <td>{{ $pelatih->gender_fokus ?? '-' }}</td>
+        </tr>
         <tr>
             <th>Alamat Domisili</th>
             <td>{{ $pelatih->alamat ?? '-' }}</td>

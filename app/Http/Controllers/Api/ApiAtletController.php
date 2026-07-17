@@ -26,48 +26,68 @@ class ApiAtletController extends Controller
         // A. Data Profil Ringkas (Header)
         $profil = [
             'nama' => $atlet->nama_lengkap,
-            'kategori' => $atlet->kategori_hitung ?? '-', // Pastikan kolom ini diisi di DB
+            // 💡 PERBAIKAN: Ubah menjadi kolom 'kategori' sesuai nama kolom asli di tabel atlets SQLyog
+            'kategori' => $atlet->kategori ?? '-', 
             'posisi' => $atlet->posisi ?? '-',
-            'foto' => $atlet->foto_url,
+            // 💡 PERBAIKAN: Gunakan kolom 'foto_profil' asli agar tidak mengirim tautan localhost pembawa eror
+            'foto' => $atlet->foto_profil, 
         ];
 
         // B. Statistik Kehadiran Bulan Ini
         $bulan_ini = Carbon::now()->month;
         $tahun_ini = Carbon::now()->year;
         
+        // REVISI: Ubah created_at menjadi tanggal_latihan agar sinkron dengan riwayat absensi asli
         $hadir = Absensi::where('atlet_id', $atlet->id)
-                        ->whereMonth('created_at', $bulan_ini)
-                        ->whereYear('created_at', $tahun_ini)
+                        ->whereMonth('tanggal_latihan', $bulan_ini)
+                        ->whereYear('tanggal_latihan', $tahun_ini)
                         ->where('status', 'H')
                         ->count();
-        // Hitung total sesi (misal total jadwal bulan ini) - disederhanakan:
+
+        // Hitung total sesi bulan ini berdasarkan tanggal latihan
         $total_sesi = Absensi::where('atlet_id', $atlet->id)
-                             ->whereMonth('created_at', $bulan_ini)
+                             ->whereMonth('tanggal_latihan', $bulan_ini)
+                             ->whereYear('tanggal_latihan', $tahun_ini)
                              ->count();
+
+
         $persentase_hadir = ($total_sesi > 0) ? round(($hadir / $total_sesi) * 100) : 0;
 
 
-        // C. DATA GRAFIK (SINKRON DENGAN WEB)
-        // Mengambil 5 latihan terakhir
+        // C. DATA GRAFIK BULANAN (SINKRON REVISI RAPOR BULANAN)
+        // Mengelompokkan semua nilai kehadiran berdasarkan bulan berjalan di tahun ini
         $grafik_data = Absensi::where('atlet_id', $atlet->id)
                               ->where('status', 'H')
-                              ->whereNotNull('nilai_dribble')
-                              ->orderBy('created_at', 'asc') // Urutkan tanggal
-                              ->take(5)
+                              ->whereYear('tanggal_latihan', Carbon::now()->year)
+                              ->selectRaw('MONTH(tanggal_latihan) as bulan_angka, 
+                                           AVG(nilai_dribble) as avg_dribble, 
+                                           AVG(nilai_pass) as avg_pass, 
+                                           AVG(nilai_shoot) as avg_shoot,
+                                           AVG(nilai_iq) as avg_iq')
+                              ->groupBy('bulan_angka')
+                              ->orderBy('bulan_angka', 'asc')
                               ->get()
                               ->map(function($item) {
-                                  // Hitung Rata-rata Skill (Sama seperti Web)
-                                  $avg = ($item->nilai_dribble + $item->nilai_pass + $item->nilai_shoot) / 3;
+                                  // Nama bulan dalam bahasa Indonesia
+                                  $namaBulan = [
+                                      1=>'Jan', 2=>'Feb', 3=>'Mar', 4=>'Apr', 5=>'Mei', 6=>'Jun',
+                                      7=>'Jul', 8=>'Agu', 9=>'Sep', 10=>'Okt', 11=>'Nov', 12=>'Des'
+                                  ];
+                                  
+                                  // Hitung rata-rata gabungan seluruh skill di bulan tersebut
+                                  $total_avg = ($item->avg_dribble + $item->avg_pass + $item->avg_shoot + $item->avg_iq) / 4;
+                                  
                                   return [
-                                      'tanggal' => Carbon::parse($item->created_at)->format('d M'),
-                                      'nilai' => round($avg)
+                                      'bulan' => $namaBulan[$item->bulan_angka] ?? 'Bulan',
+                                      'nilai' => round($total_avg)
                                   ];
                               });
 
-        // D. Status Tagihan Bulan Ini
+
+        // D. Status Tagihan Bulan Ini (Dibetulkan Menggunakan Format Angka Berdasarkan DB)
         $tagihan = Tagihan::where('atlet_id', $atlet->id)
-                          ->where('bulan', date('F')) // January, February
-                          ->where('tahun', date('Y'))
+                          ->where('bulan', \Carbon\Carbon::now()->month) // Menghasilkan angka murni (1-12)
+                          ->where('tahun', \Carbon\Carbon::now()->year)
                           ->first();
         
         $status_spp = $tagihan ? $tagihan->status : 'Belum Ada Tagihan';
@@ -115,8 +135,9 @@ class ApiAtletController extends Controller
                 'nomor_hp'     => $atlet->no_hp ?? $atlet->no_hp_atlet ?? '-', 
                 
                 'alamat'       => $atlet->alamat ?? '-',
-                'kategori'     => $atlet->kategori_hitung ?? $atlet->kategori_umur ?? '-', 
-                'sekolah'      => $atlet->sekolah ?? $atlet->nama_sekolah ?? '-', 
+                // 💡 PERBAIKAN: Langsung tembak ke kolom 'kategori' agar sinkron penuh dengan DB
+                'kategori'     => $atlet->kategori ?? '-', 
+                'sekolah'      => $atlet->sekolah ?? $atlet->nama_sekolah ?? '-',
                 'posisi'       => $atlet->posisi ?? '-',
                 
                 // DATA ORTU (Sesuai Screenshot Database: nama_orang_tua)
@@ -125,7 +146,8 @@ class ApiAtletController extends Controller
                 // NO WA ORTU (Sesuai Screenshot Database: no_hp_orang_tua)
                 'no_wa_ortu'   => $atlet->no_hp_orang_tua ?? '-',
                 
-                'foto'         => $atlet->foto_url
+                // 💡 PERBAIKAN: Ambil dari kolom 'foto_profil' asli database agar berupa path teks seperti pelatih
+                'foto'         => $atlet->foto_profil 
             ]
         ]);
     }
@@ -140,48 +162,86 @@ class ApiAtletController extends Controller
             return response()->json(['success' => false, 'message' => 'Data atlet tidak ditemukan']);
         }
 
-        // AMBIL DATA ABSENSI (Hanya yang Statusnya 'H' / Hadir)
-        // Kita ambil data tahun ini agar relevan
-        $absensis = Absensi::where('atlet_id', $atlet->id)
-                           ->where('status', 'H')
-                           ->whereYear('created_at', date('Y')) // Filter Tahun Ini
-                           ->get();
+        // AMBIL SEMUA DATA ABSENSI TAHUN INI (Untuk generate laporan kotak bulanan)
+        $tahunIni = \Carbon\Carbon::now()->year;
+        $all_absensi = Absensi::where('atlet_id', $atlet->id)
+                              ->whereYear('tanggal_latihan', $tahunIni)
+                              ->get();
 
-        $totalLatihan = $absensis->count();
+        $namaBulanIndo = [
+            1=>'Januari', 2=>'Februari', 3=>'Maret', 4=>'April', 5=>'Mei', 6=>'Juni',
+            7=>'Juli', 8=>'Agustus', 9=>'September', 10=>'Oktober', 11=>'November', 12=>'Desember'
+        ];
 
-        if ($totalLatihan == 0) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Belum ada data latihan',
-                'summary' => null
-            ]);
+        $rekap_bulanan = [];
+        $total_hadir_setahun = 0;
+
+        // Looping untuk membuat data kompartemen kotak per bulan (Poin 14 & 16)
+        for ($m = 1; $m <= 12; $m++) {
+            // Filter data absensi khusus bulan ini
+            $absensi_bulan = $all_absensi->where('tanggal_latihan', '!=', null)
+                                         ->filter(function($item) use ($m) {
+                                             return \Carbon\Carbon::parse($item->tanggal_latihan)->month == $m;
+                                         });
+
+            $hadir = $absensi_bulan->where('status', 'H')->count();
+            $sakit = $absensi_bulan->where('status', 'S')->count();
+            $izin  = $absensi_bulan->where('status', 'I')->count();
+            $alpha = $absensi_bulan->where('status', 'A')->count();
+
+            // Hitung jatah latihan (Target 12 Sesi)
+            $target = 12;
+            $kurang = $target - $hadir;
+            $status_tuntas = ($kurang <= 0) ? 'TUNTAS' : 'BELUM TUNTAS';
+            $utang_sesi = ($kurang > 0) ? $kurang : 0;
+
+            $total_hadir_setahun += $hadir;
+
+            // Hitung rata-rata nilai skill khusus bulan ini jika pelatih ada input nilai
+            $avgDribble = round($absensi_bulan->where('status', 'H')->avg('nilai_dribble') ?? 0);
+            $avgPass    = round($absensi_bulan->where('status', 'H')->avg('nilai_pass') ?? 0);
+            $avgShoot   = round($absensi_bulan->where('status', 'H')->avg('nilai_shoot') ?? 0);
+            $avgIQ      = round($absensi_bulan->where('status', 'H')->avg('nilai_iq') ?? 0);
+            $overall_bulan = round(($avgDribble + $avgPass + $avgShoot + $avgIQ) / 4);
+
+            // Hanya masukkan bulan ke dalam list jika sudah ada record absensi atau merupakan bulan berjalan
+            if ($absensi_bulan->count() > 0 || $m <= \Carbon\Carbon::now()->month) {
+                $rekap_bulanan[] = [
+                    'bulan_angka' => $m,
+                    'nama_bulan' => $namaBulanIndo[$m],
+                    'rekap_kehadiran' => [
+                        'hadir' => $hadir,
+                        'sakit' => $sakit,
+                        'izin' => $izin,
+                        'alpha' => $alpha,
+                    ],
+                    'sistem_sks' => [
+                        'target_wajib' => $target,
+                        'total_terpenuhi' => $hadir,
+                        'sisa_utang_latihan' => $utang_sesi,
+                        'status' => $status_tuntas
+                    ],
+                    'nilai_performa' => [
+                        'overall' => $overall_bulan,
+                        'dribble' => $avgDribble,
+                        'passing' => $avgPass,
+                        'shooting' => $avgShoot,
+                        'game_iq' => $avgIQ
+                    ]
+                ];
+            }
         }
 
-        // HITUNG RATA-RATA (AUTOMATIC CALCULATION)
-        // avg() adalah fungsi bawaan Laravel Collection yang canggih
-        $avgDribble = round($absensis->avg('nilai_dribble') ?? 0);
-        $avgPass    = round($absensis->avg('nilai_pass') ?? 0);
-        $avgShoot   = round($absensis->avg('nilai_shoot') ?? 0);
-        $avgIQ      = round($absensis->avg('nilai_iq') ?? 0);
 
-        // Menghitung Rata-rata Total Skill (Overall)
-        $overall = round(($avgDribble + $avgPass + $avgShoot + $avgIQ) / 4);
 
+
+
+        // Cukup sisakan return response rekap bulanan yang sudah rapi ini, sisanya di bawah hapus total
         return response()->json([
             'success' => true,
-            'data' => [
-                'total_kehadiran' => $totalLatihan,
-                'periode' => 'Tahun ' . date('Y'),
-                'overall_score' => $overall,
-                'detail' => [
-                    // Kita format untuk grafik di Flutter nanti
-                    ['kategori' => 'Dribble', 'nilai' => $avgDribble],
-                    ['kategori' => 'Passing', 'nilai' => $avgPass],
-                    ['kategori' => 'Shooting', 'nilai' => $avgShoot],
-                    ['kategori' => 'Game IQ', 'nilai' => $avgIQ],
-                ],
-                'catatan_pelatih' => "Tingkatkan terus latihanmu! Nilai ini diambil dari rata-rata $totalLatihan sesi latihan terakhir."
-            ]
+            'periode' => 'Semester Berjalan - Tahun ' . $tahunIni,
+            'total_hadir_akumulasi' => $total_hadir_setahun,
+            'data_rapor_bulanan' => $rekap_bulanan 
         ]);
     }
 }

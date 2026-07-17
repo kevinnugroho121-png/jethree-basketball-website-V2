@@ -47,6 +47,8 @@ class PelatihController extends Controller
             'lisensi'         => 'nullable|string', // Tambahan: Lisensi
             'alamat'          => 'nullable|string', // Tambahan: Alamat
             'foto_profil'     => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'kategori_fokus'  => 'required|string', // ⚡ BARU: Mengunci kategori fokus pelatih
+            'gender_fokus'    => 'required|string', // ⚡ BARU: Mengunci gender fokus pelatih
         ], [
             'tanggal_lahir.before' => 'Maaf, Umur Coach minimal harus 17 tahun.',
             'foto_profil.max'      => 'Ukuran foto maksimal 2MB.',
@@ -90,6 +92,8 @@ class PelatihController extends Controller
                 'lisensi'       => $request->lisensi, // Simpan Lisensi
                 'alamat'        => $request->alamat,   // Simpan Alamat
                 'foto_profil'   => $fotoPath,
+                'kategori_fokus'=> $request->kategori_fokus, // ⚡ BARU: Masuk ke database pelatihs
+                'gender_fokus'  => $request->gender_fokus,   // ⚡ BARU: Masuk ke database pelatihs
                 // SPESIALISASI SUDAH DIHAPUS
             ]);
 
@@ -128,6 +132,8 @@ class PelatihController extends Controller
             'lisensi'       => 'nullable|string',
             'alamat'        => 'nullable|string',
             'foto_profil'   => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'kategori_fokus'=> 'required|string', // ⚡ BARU
+            'gender_fokus'  => 'required|string',   // ⚡ BARU
         ]);
 
         // Simpan path foto lama dulu sebagai default
@@ -162,6 +168,8 @@ class PelatihController extends Controller
             'lisensi'       => $request->lisensi,
             'alamat'        => $request->alamat,
             'foto_profil'   => $fotoPath,
+            'kategori_fokus'=> $request->kategori_fokus, // ⚡ BARU
+            'gender_fokus'  => $request->gender_fokus,   // ⚡ BARU
         ]);
 
         // Update Nama di User Login juga agar sinkron

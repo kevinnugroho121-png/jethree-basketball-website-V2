@@ -50,7 +50,8 @@
                         <div class="text-4xl"></div>
                     </div>
 
-                    {{-- Form Input --}}
+
+                    {{-- Form Input (Sudah Disterilkan dari Tag Bocor & Grid Dibuat Simetris) --}}
                     <form action="{{ route('pelatih.progres.store') }}" method="POST">
                         @csrf
                         {{-- Data Hidden --}}
@@ -62,8 +63,8 @@
 
                         {{-- Tanggal --}}
                         <div class="mb-6">
-                            <label class="block font-bold text-gray-700 mb-2">Tanggal Penilaian</label>
-                            <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" class="w-full md:w-1/2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Tanggal Penilaian</label>
+                            <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" class="w-full md:w-1/2 h-10 text-sm rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                         </div>
 
                         <hr class="mb-6 border-gray-200">
@@ -77,75 +78,77 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
                             {{-- Teknik --}}
                             <div>
-                                <label class="block text-sm font-bold text-blue-700 mb-1 flex justify-between">
+                                <label class="block text-xs font-bold text-blue-700 uppercase tracking-wider mb-1 flex justify-between">
                                     Teknik 
-                                    <span id="hasil_teknik" class="text-gray-400 font-extrabold">-</span>
+                                    <span id="hasil_teknik" class="text-gray-400 font-extrabold text-sm">-</span>
                                 </label>
-                                <span class="text-xs text-gray-500 block mb-2">(Dribble, Shoot)</span>
-                                {{-- PERBAIKAN: Menambahkan Value dari Controller --}}
+                                <span class="text-[11px] text-gray-400 block mb-2">(Dribble, Shoot)</span>
                                 <input type="number" id="teknik" name="teknik" min="0" max="100" 
                                        value="{{ old('teknik', $nilai['teknik'] ?? 0) }}" 
                                        oninput="hitungHuruf('teknik')" 
-                                       class="w-full text-center text-xl font-bold text-blue-800 rounded-md border-blue-200 focus:border-blue-500" placeholder="0" required>
+                                       class="w-full h-11 text-center text-xl font-bold text-blue-800 rounded-lg border-blue-200 focus:border-blue-500 shadow-sm" placeholder="0" required>
                             </div>
 
                             {{-- Fisik --}}
                             <div>
-                                <label class="block text-sm font-bold text-green-700 mb-1 flex justify-between">
+                                <label class="block text-xs font-bold text-green-700 uppercase tracking-wider mb-1 flex justify-between">
                                     Fisik
-                                    <span id="hasil_fisik" class="text-gray-400 font-extrabold">-</span>
+                                    <span id="hasil_fisik" class="text-gray-400 font-extrabold text-sm">-</span>
                                 </label>
-                                <span class="text-xs text-gray-500 block mb-2">(Speed, Power)</span>
-                                {{-- PERBAIKAN: Menambahkan Value dari Controller --}}
+                                <span class="text-[11px] text-gray-400 block mb-2">(Speed, Power)</span>
                                 <input type="number" id="fisik" name="fisik" min="0" max="100" 
                                        value="{{ old('fisik', $nilai['fisik'] ?? 0) }}" 
                                        oninput="hitungHuruf('fisik')" 
-                                       class="w-full text-center text-xl font-bold text-green-800 rounded-md border-green-200 focus:border-green-500" placeholder="0" required>
+                                       class="w-full h-11 text-center text-xl font-bold text-green-800 rounded-lg border-green-200 focus:border-green-500 shadow-sm" placeholder="0" required>
                             </div>
 
                             {{-- Mental --}}
                             <div>
-                                <label class="block text-sm font-bold text-yellow-700 mb-1 flex justify-between">
+                                <label class="block text-xs font-bold text-yellow-700 uppercase tracking-wider mb-1 flex justify-between">
                                     Mental
-                                    <span id="hasil_mental" class="text-gray-400 font-extrabold">-</span>
+                                    <span id="hasil_mental" class="text-gray-400 font-extrabold text-sm">-</span>
                                 </label>
-                                <span class="text-xs text-gray-500 block mb-2">(Disiplin, Fokus)</span>
-                                {{-- PERBAIKAN: Menambahkan Value dari Controller --}}
+                                <span class="text-[11px] text-gray-400 block mb-2">(Disiplin, Fokus)</span>
                                 <input type="number" id="mental" name="mental" min="0" max="100" 
                                        value="{{ old('mental', $nilai['mental'] ?? 0) }}" 
                                        oninput="hitungHuruf('mental')" 
-                                       class="w-full text-center text-xl font-bold text-yellow-800 rounded-md border-yellow-200 focus:border-yellow-500" placeholder="0" required>
+                                       class="w-full h-11 text-center text-xl font-bold text-yellow-800 rounded-lg border-yellow-200 focus:border-yellow-500 shadow-sm" placeholder="0" required>
                             </div>
 
                             {{-- Taktik --}}
                             <div>
-                                <label class="block text-sm font-bold text-purple-700 mb-1 flex justify-between">
+                                <label class="block text-xs font-bold text-purple-700 uppercase tracking-wider mb-1 flex justify-between">
                                     Taktik
-                                    <span id="hasil_taktik" class="text-gray-400 font-extrabold">-</span>
+                                    <span id="hasil_taktik" class="text-gray-400 font-extrabold text-sm">-</span>
                                 </label>
-                                <span class="text-xs text-gray-500 block mb-2">(IQ Game, Posisi)</span>
-                                {{-- PERBAIKAN: Menambahkan Value dari Controller --}}
+                                <span class="text-[11px] text-gray-400 block mb-2">(IQ Game, Posisi)</span>
                                 <input type="number" id="taktik" name="taktik" min="0" max="100" 
                                        value="{{ old('taktik', $nilai['taktik'] ?? 0) }}" 
                                        oninput="hitungHuruf('taktik')" 
-                                       class="w-full text-center text-xl font-bold text-purple-800 rounded-md border-purple-200 focus:border-purple-500" placeholder="0" required>
+                                       class="w-full h-11 text-center text-xl font-bold text-purple-800 rounded-lg border-purple-200 focus:border-purple-500 shadow-sm" placeholder="0" required>
                             </div>
                         </div>
 
                         {{-- Catatan --}}
                         <div class="mb-6">
-                            <label class="block font-bold text-gray-700 mb-2">Catatan Evaluasi (Opsional)</label>
-                            <textarea name="catatan" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Berikan masukan untuk atlet ini...">{{ old('catatan') }}</textarea>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Catatan Evaluasi (Opsional)</label>
+                            <textarea name="catatan" rows="3" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" placeholder="Berikan masukan untuk atlet ini...">{{ old('catatan') }}</textarea>
                         </div>
 
                         {{-- Tombol Aksi --}}
-                        <div class="flex justify-end gap-3 pt-4 border-t">
-                            <a href="{{ route('pelatih.progres.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md font-bold hover:bg-gray-300 transition">Batal</a>
-                            <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-md font-bold hover:bg-indigo-700 transition shadow-lg">
-                                Simpan
+                        <div class="flex justify-end items-center gap-3 pt-4 border-t border-gray-100">
+                            <a href="{{ route('pelatih.progres.index') }}" 
+                               class="h-10 px-5 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-xs uppercase tracking-wider transition">
+                               Batal
+                            </a>
+                            <button type="submit" 
+                               class="h-10 px-6 inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs uppercase tracking-wider shadow-md transition">
+                               💾 Simpan Rapor
                             </button>
                         </div>
                     </form>
+
+
 
                 </div>
             </div>

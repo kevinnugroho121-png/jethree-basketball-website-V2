@@ -30,8 +30,8 @@
                             <label for="target_role" class="block text-sm font-bold text-gray-700 mb-2">Kirim Ke Siapa? <span class="text-red-500">*</span></label>
                             <select name="target_role" id="target_role" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                                 <option value="">-- Pilih Penerima --</option>
-                                {{-- Value "semua" sesuai dengan Controller baru --}}
-                                <option value="semua">📢 Semua Pengguna (Atlet & Pelatih)</option>
+                                {{-- 💡 PERBAIKAN: Teks disesuaikan karena Owner sekarang ikut menerima notifikasi --}}
+                                <option value="semua">📢 Semua Pengguna (Atlet, Pelatih & Owner)</option>
                                 <option value="atlet">🏃 Khusus Atlet</option>
                                 <option value="pelatih">👟 Khusus Pelatih</option>
                             </select>

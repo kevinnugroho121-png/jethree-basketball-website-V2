@@ -130,14 +130,22 @@ class TagihanController extends Controller
         return view('admin.tagihan.edit', compact('tagihan'));
     }
 
+
+
+
     // === 5. UPDATE (PROSES PEMBAYARAN + NOTIFIKASI LUNAS) ===
+
+
+
     public function update(Request $request, Tagihan $tagihan)
     {
+        // REVISI POIN 6: Paksa validasi 'image' agar Laravel melakukan deep checking pada signature berkas gambar asli
         $request->validate([
             'status'            => 'required|in:Lunas,Belum Lunas',
             'metode_pembayaran' => 'nullable|string',
-            'bukti_pembayaran'  => 'nullable|image|max:2048', // Max 2MB
+            'bukti_pembayaran'  => 'nullable|image|mimes:jpeg,png,jpg|max:2048', 
             'keterangan'        => 'nullable|string',
+            'catatan_penolakan' => 'nullable|string', // 💡 TAMBAHAN: Validasi alasan penolakan dari admin web
         ]);
 
         $data = [
@@ -155,44 +163,92 @@ class TagihanController extends Controller
             
             $data['metode_pembayaran'] = $request->metode_pembayaran;
             $data['tanggal_lunas'] = $tagihan->tanggal_lunas ?? now(); // Kalau sudah pernah lunas, tanggal jangan berubah
+            $data['catatan_penolakan'] = null; // 💡 TAMBAHAN: Hapus alasan penolakan lama jika akhirnya tagihan dinyatakan lunas
 
             // UPLOAD BUKTI (Jika Ada File Baru)
             if ($request->hasFile('bukti_pembayaran')) {
-                // Hapus file lama biar gak menuhi storage
                 if ($tagihan->bukti_pembayaran) {
                     Storage::disk('public')->delete($tagihan->bukti_pembayaran);
                 }
-                $path = $request->file('bukti_pembayaran')->store('bukti-bayar', 'public');
+                $file = $request->file('bukti_pembayaran');
+                $extension = $file->getClientOriginalExtension();
+                $safeName = 'bukti_adm_' . time() . '_' . uniqid() . '.' . $extension;
+                $path = $file->storeAs('bukti-bayar', $safeName, 'public');
                 $data['bukti_pembayaran'] = $path;
             }
-            
-            // [LOGIKA BARU] NOTIFIKASI PEMBAYARAN LUNAS
-            // Kirim notif HANYA JIKA status sebelumnya 'Belum Lunas'
-            if ($tagihan->status == 'Belum Lunas') {
+
+            // [LOGIKA REVISI FASE 4] AUTOMATIC DOUBLE NOTIFICATION (IN-APP & WA ORTU)
+            if ($tagihan->status != 'Lunas') {
                 $atlet = $tagihan->atlet;
                 if ($atlet && $atlet->user_id) {
                     Notifikasi::create([
                         'user_id'  => $atlet->user_id,
                         'judul'    => 'Pembayaran Lunas ✅',
-                        'pesan'    => 'Terima kasih! Pembayaran ' . $tagihan->jenis_tagihan . ' ' . $tagihan->bulan . '/' . $tagihan->tahun . ' telah kami terima dan diverifikasi.',
+                        'pesan'    => 'Terima kasih! Pembayaran ' . $tagihan->jenis_tagihan . ' ' . $tagihan->bulan . '/' . $tagihan->tahun . ' telah diverifikasi oleh Admin.',
                         'kategori' => 'pembayaran',
                         'is_read'  => false,
                     ]);
                 }
 
-                // BUKA GEMBOK ATLET JIKA STATUS MASIH PENDING
+                if ($atlet) {
+                    $targetHp = $atlet->no_hp_orang_tua ? $atlet->no_hp_orang_tua : ($atlet->no_hp_atlet ?? '0');
+                    $no_hp = preg_replace('/^0/', '62', $targetHp);
+                    $pesanWa = "📢 *KONFIRMASI PEMBAYARAN JETHREE BASKETBALL* 🏀\n\n" .
+                               "Yth. Orang Tua/Wali dari *" . $atlet->nama_lengkap . "*,\n\n" .
+                               "Pembayaran untuk *" . $tagihan->jenis_tagihan . " Bulan " . $tagihan->bulan . "/" . $tagihan->tahun . "* sebesar *Rp " . number_format($tagihan->nominal, 0, ',', '.') . "* telah *BERHASIL DIVERIFIKASI* dan dinyatakan *LUNAS*.\n\n" .
+                               "Terima kasih atas dukungannya. Salam Olahraga! 🙏🔥";
+
+                    $curl = curl_init();
+                    curl_setopt_array($curl, array(
+                        CURLOPT_URL => 'https://api.fonnte.com/send',
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_ENCODING => '',
+                        CURLOPT_MAXREDIRS => 10,
+                        CURLOPT_TIMEOUT => 5,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                        CURLOPT_CUSTOMREQUEST => 'POST',
+                        CURLOPT_POSTFIELDS => array('target' => $no_hp, 'message' => $pesanWa, 'countryCode' => '62'),
+                        CURLOPT_HTTPHEADER => array('Authorization: SqLCDpjTPVSgkJ2yJGKN'),
+                        CURLOPT_SSL_VERIFYPEER => false
+                    ));
+                    curl_exec($curl);
+                    curl_close($curl);
+                }
+
                 if ($atlet && $atlet->status == 'Pending') {
                     $atlet->update(['status' => 'Aktif']);
                 }
             }
-
         } 
-        // SKENARIO BATAL LUNAS (Reset)
+        // SKENARIO BATAL LUNAS / PENOLAKAN STRUK (Reset)
         elseif ($request->status == 'Belum Lunas') {
             $data['tanggal_lunas'] = null;
             $data['metode_pembayaran'] = null;
-            // Bukti pembayaran tidak kita hapus otomatis, buat jaga-jaga.
+            $data['catatan_penolakan'] = $request->catatan_penolakan; // 💡 TAMBAHAN: Simpan alasan agar dibaca di HP Atlet
+
+            // 💡 SINKRONISASI MOBILE: Hapus file struk lama yang salah agar status `isPending` di Flutter otomatis berubah 
+            // menjadi FALSE (Tombol BAYAR aktif lagi dan kotak merah peringatan penolakan muncul di HP).
+            if ($tagihan->bukti_pembayaran) {
+                Storage::disk('public')->delete($tagihan->bukti_pembayaran);
+            }
+            $data['bukti_pembayaran'] = null;
+
+            // 💡 TAMBAHAN: Kirim Notifikasi otomatis ke aplikasi HP atlet bahwa pembayarannya ditolak
+            if ($tagihan->atlet && $tagihan->atlet->user_id && $request->catatan_penolakan) {
+                Notifikasi::create([
+                    'user_id'  => $tagihan->atlet->user_id,
+                    'judul'    => 'Pembayaran Ditolak ❌',
+                    'pesan'    => 'Bukti transfer SPP Bulan ' . $tagihan->bulan . '/' . $tagihan->tahun . ' ditolak Admin. Alasan: ' . $request->catatan_penolakan,
+                    'kategori' => 'tagihan',
+                    'is_read'  => false,
+                ]);
+            }
         }
+
+
+
+
 
         $tagihan->update($data);
 
@@ -230,6 +286,13 @@ class TagihanController extends Controller
         if ($bulan) $query->where('bulan', $bulan);
         if ($tahun) $query->where('tahun', $tahun);
 
+        // 💡 TAMBAHAN: Saring data berdasarkan Kategori Atlet agar PDF Sinkron
+        if ($request->filled('kategori') && $request->kategori != 'Semua') {
+            $query->whereHas('atlet', function($q) use ($request) {
+                $q->where('kategori', $request->kategori);
+            });
+        }
+
         $laporan = $query->orderBy('tanggal_lunas', 'asc')->get();
         $totalPemasukan = $laporan->sum('nominal');
 
@@ -251,6 +314,13 @@ class TagihanController extends Controller
 
         if ($bulan) $query->where('bulan', $bulan);
         if ($tahun) $query->where('tahun', $tahun);
+
+        // 💡 TAMBAHAN: Saring data berdasarkan Kategori Atlet saat PDF diunduh asli
+        if ($request->filled('kategori') && $request->kategori != 'Semua') {
+            $query->whereHas('atlet', function($q) use ($request) {
+                $q->where('kategori', $request->kategori);
+            });
+        }
 
         $laporan = $query->orderBy('tanggal_lunas', 'asc')->get();
         $totalPemasukan = $laporan->sum('nominal');
@@ -277,19 +347,52 @@ class TagihanController extends Controller
             'metode_pembayaran' => $tagihan->metode_pembayaran ?? 'Transfer Bank (Via Mobile)', 
         ]);
 
-        // Kirim Notifikasi ke Atlet bahwa pembayaran diterima
+        // Kirim Notifikasi ke Atlet (Double Notification: App + WA)
         if ($tagihan->atlet && $tagihan->atlet->user_id) {
+            $atlet = $tagihan->atlet;
+
+            // 1. Notifikasi Internal Aplikasi Mobile
             Notifikasi::create([
-                'user_id'  => $tagihan->atlet->user_id,
+                'user_id'  => $atlet->user_id,
                 'judul'    => 'Pembayaran Lunas ✅',
-                'pesan'    => 'Terima kasih! Pembayaran ' . $tagihan->jenis_tagihan . ' telah diverifikasi Admin.',
+                'pesan'    => 'Terima kasih! Pembayaran ' . $tagihan->jenis_tagihan . ' ' . $tagihan->bulan . '/' . $tagihan->tahun . ' telah diverifikasi Admin.',
                 'kategori' => 'pembayaran',
                 'is_read'  => false,
             ]);
 
+            // 2. WhatsApp Gateway Fonnte Otomatis ke Orang Tua
+            $targetHp = $atlet->no_hp_orang_tua ? $atlet->no_hp_orang_tua : ($atlet->no_hp_atlet ?? '0');
+            $no_hp = preg_replace('/^0/', '62', $targetHp);
+            
+            $pesanWa = "📢 *KONFIRMASI PEMBAYARAN JETHREE BASKETBALL* 🏀\n\n" .
+                       "Yth. Orang Tua/Wali dari *" . $atlet->nama_lengkap . "*,\n\n" .
+                       "Pembayaran untuk *" . $tagihan->jenis_tagihan . " Bulan " . $tagihan->bulan . "/" . $tagihan->tahun . "* sebesar *Rp " . number_format($tagihan->nominal, 0, ',', '.') . "* telah *BERHASIL DIVERIFIKASI* dan dinyatakan *LUNAS*.\n\n" .
+                       "Terima kasih atas dukungannya. Salam Olahraga! 🙏🔥";
+
+            $curl = curl_init();
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => 'https://api.fonnte.com/send',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 5,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => array(
+                    'target' => $no_hp,
+                    'message' => $pesanWa,
+                    'countryCode' => '62',
+                ),
+                CURLOPT_HTTPHEADER => array('Authorization: SqLCDpjTPVSgkJ2yJGKN'),
+                CURLOPT_SSL_VERIFYPEER => false
+            ));
+            curl_exec($curl);
+            curl_close($curl);
+
             // BUKA GEMBOK ATLET JIKA STATUS MASIH PENDING
-            if ($tagihan->atlet->status == 'Pending') {
-                $tagihan->atlet->update(['status' => 'Aktif']);
+            if ($atlet->status == 'Pending') {
+                $atlet->update(['status' => 'Aktif']);
             }
         }
 
@@ -297,7 +400,7 @@ class TagihanController extends Controller
     }
 
 
-    // === [BARU] HALAMAN DETAIL SPP KHUSUS 1 ATLET ===
+    // === [BARU] HALAMAN DETAIL SPP KHUSUS 1 ATLET (FIXED UTK VISUALISASI KOTAK PERFORMA BULANAN) ===
     public function show($id)
     {
         // Cari data atlet berdasarkan ID
@@ -308,9 +411,61 @@ class TagihanController extends Controller
                            ->orderBy('tahun', 'desc')
                            ->orderBy('bulan', 'desc')
                            ->get();
+
+        // =========================================================================
+        // [BARU] LOGIKA AGREGASI ABSENSI BULANAN UNTUK VISUALISASI KOTAK (POIN 14 & 16)
+        // =========================================================================
+        $tahunIni = date('Y');
+        $all_absensi = \App\Models\Absensi::where('atlet_id', $id)
+                                          ->whereYear('tanggal_latihan', $tahunIni)
+                                          ->get();
+
+        $namaBulanIndo = [
+            1=>'Januari', 2=>'Februari', 3=>'Maret', 4=>'April', 5=>'Mei', 6=>'Juni',
+            7=>'Juli', 8=>'Agustus', 9=>'September', 10=>'Oktober', 11=>'November', 12=>'Desember'
+        ];
+
+        $rekap_bulanan = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $absensi_bulan = $all_absensi->filter(function($item) use ($m) {
+                return $item->tanggal_latihan && \Carbon\Carbon::parse($item->tanggal_latihan)->month == $m;
+            });
+
+            $hadir = $absensi_bulan->where('status', 'H')->count();
+            $sakit = $absensi_bulan->where('status', 'S')->count();
+            $izin  = $absensi_bulan->where('status', 'I')->count();
+            $alpha = $absensi_bulan->where('status', 'A')->count();
+
+            // Aturan main SKS: Target wajib 12 sesi latihan dalam sebulan
+            $target = 12;
+            $kurang = $target - $hadir;
+            $status_tuntas = ($kurang <= 0) ? 'TUNTAS' : 'BELUM TUNTAS';
+            $utang_sesi = ($kurang > 0) ? $kurang : 0;
+
+            // Ambil rata-rata nilai parameter skill basket
+            $avgDribble = round($absensi_bulan->where('status', 'H')->avg('nilai_dribble') ?? 0);
+            $avgPass    = round($absensi_bulan->where('status', 'H')->avg('nilai_pass') ?? 0);
+            $avgShoot   = round($absensi_bulan->where('status', 'H')->avg('nilai_shoot') ?? 0);
+            $avgIQ      = round($absensi_bulan->where('status', 'H')->avg('nilai_iq') ?? 0);
+            $overall_bulan = round(($avgDribble + $avgPass + $avgShoot + $avgIQ) / 4);
+
+            if ($absensi_bulan->count() > 0 || $m <= date('n')) {
+                $rekap_bulanan[] = [
+                    'nama_bulan'   => $namaBulanIndo[$m],
+                    'hadir'        => $hadir,
+                    'sakit'        => $sakit,
+                    'izin'         => $izin,
+                    'alpha'        => $alpha,
+                    'target_wajib' => $target,
+                    'utang_latihan'=> $utang_sesi,
+                    'status'       => $status_tuntas,
+                    'overall'      => $overall_bulan
+                ];
+            }
+        }
                            
-        // Kirim datanya ke halaman view baru (show.blade.php)
-        return view('admin.tagihan.show', compact('atlet', 'tagihans'));
+        // Kirim datanya ke halaman view baru (show.blade.php) beserta variabel rekap_bulanan
+        return view('admin.tagihan.show', compact('atlet', 'tagihans', 'rekap_bulanan'));
     }
 
 

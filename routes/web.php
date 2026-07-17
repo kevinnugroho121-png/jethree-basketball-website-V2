@@ -9,6 +9,7 @@ use App\Models\Pelatih;
 use App\Models\Jadwal;
 
 // --- IMPORT CONTROLLERS (ADMIN) ---
+use App\Http\Controllers\Admin\BackupController; // <--- Taruh di bagian atas file jika belum ada
 use App\Http\Controllers\Admin\AtletController;
 use App\Http\Controllers\Admin\JadwalController;
 use App\Http\Controllers\Admin\KalenderController; 
@@ -89,6 +90,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/atlet/{id}/kirim-rapor', [\App\Http\Controllers\Admin\AtletController::class, 'kirimRaporWA'])->name('atlet.kirim-rapor');
 
     // --- MANAJEMEN JADWAL ---
+    Route::post('jadwal/generate', [JadwalController::class, 'generate'])->name('jadwal.generate'); // ⚡ BARU: Proses generate massal
     Route::resource('jadwal', JadwalController::class);
     
     // --- ABSENSI (Admin side) ---
@@ -111,6 +113,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::put('tagihan/{id}/verifikasi-lunas', [TagihanController::class, 'verifikasiLunas'])->name('tagihan.verifikasi_lunas');
 
     Route::resource('tagihan', TagihanController::class);
+    Route::get('backup-database', [BackupController::class, 'downloadBackup'])->name('backup.database'); // <--- TAMBAHKAN INI
     
     Route::resource('notifikasi', AdminNotifikasiController::class);
 

@@ -38,14 +38,19 @@
                             </button>
                         </div>
 
-                        {{-- 2. Filter Kategori (Auto Submit saat dipilih) --}}
+                        {{-- 2. Filter Kategori (Auto Submit saat dipilih - Nilai disamakan dengan Database) --}}
                         <select name="kategori" onchange="this.form.submit()" class="block h-9 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-green-500 text-xs px-3 shadow-sm">
                             <option value="Semua" {{ request('kategori') == 'Semua' ? 'selected' : '' }}>Semua Kategori</option>
-                            <option value="KU-10" {{ request('kategori') == 'KU-10' ? 'selected' : '' }}>KU-10</option>
-                            <option value="KU-12" {{ request('kategori') == 'KU-12' ? 'selected' : '' }}>KU-12</option>
-                            <option value="KU-14" {{ request('kategori') == 'KU-14' ? 'selected' : '' }}>KU-14</option>
-                            <option value="KU-16" {{ request('kategori') == 'KU-16' ? 'selected' : '' }}>KU-16</option>
-                            <option value="KU-18" {{ request('kategori') == 'KU-18' ? 'selected' : '' }}>KU-18</option>
+                            <option value="KU-10 Putra" {{ request('kategori') == 'KU-10 Putra' ? 'selected' : '' }}>KU-10 Putra</option>
+                            <option value="KU-12 Putra" {{ request('kategori') == 'KU-12 Putra' ? 'selected' : '' }}>KU-12 Putra</option>
+                            <option value="KU-14 Putra" {{ request('kategori') == 'KU-14 Putra' ? 'selected' : '' }}>KU-14 Putra</option>
+                            <option value="KU-16 Putra" {{ request('kategori') == 'KU-16 Putra' ? 'selected' : '' }}>KU-16 Putra</option>
+                            <option value="KU-18 Putra" {{ request('kategori') == 'KU-18 Putra' ? 'selected' : '' }}>KU-18 Putra</option>
+                            <option value="KU-10 Putri" {{ request('kategori') == 'KU-10 Putri' ? 'selected' : '' }}>KU-10 Putri</option>
+                            <option value="KU-12 Putri" {{ request('kategori') == 'KU-12 Putri' ? 'selected' : '' }}>KU-12 Putri</option>
+                            <option value="KU-14 Putri" {{ request('kategori') == 'KU-14 Putri' ? 'selected' : '' }}>KU-14 Putri</option>
+                            <option value="KU-16 Putri" {{ request('kategori') == 'KU-16 Putri' ? 'selected' : '' }}>KU-16 Putri</option>
+                            <option value="KU-18 Putri" {{ request('kategori') == 'KU-18 Putri' ? 'selected' : '' }}>KU-18 Putri</option>
                         </select>
 
                         {{-- 3. Filter Status Pembayaran (Auto Submit) --}}

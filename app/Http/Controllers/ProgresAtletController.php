@@ -64,11 +64,11 @@ class ProgresAtletController extends Controller
         }
 
         // B. LOGIKA OTOMATIS (AUTO-CALCULATE DARI ABSENSI)
-        // Sama persis dengan logika di Mobile App
-        
+        // REVISI FASE 2: Filter dikunci hanya pada Bulan & Tahun berjalan agar menjadi rekap bulanan murni mumpung target 12 sesi
         $absensis = Absensi::where('atlet_id', $atlet->id)
                            ->where('status', 'H') // Hanya yang hadir
-                           ->whereYear('created_at', date('Y')) // Tahun ini
+                           ->whereMonth('tanggal_latihan', date('m')) // Mengunci bulan saat ini (Contoh: Juli)
+                           ->whereYear('tanggal_latihan', date('Y'))  // Mengunci tahun saat ini (Contoh: 2026)
                            ->get();
 
         // Nilai Default (Jika belum ada latihan)

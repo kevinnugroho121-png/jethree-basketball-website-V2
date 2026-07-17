@@ -76,6 +76,18 @@
                                         <div class="text-[10px] text-gray-400 font-normal mt-0.5">
                                             Lahir: {{ \Carbon\Carbon::parse($pelatih->tanggal_lahir)->format('d-m-Y') }}
                                         </div>
+                                        
+                                        {{-- ⚡ BARU: BADGE INDIKATOR FOKUS KELAS & GENDER COACH --}}
+                                        @if($pelatih->kategori_fokus || $pelatih->gender_fokus)
+                                            <div class="mt-1 flex flex-wrap gap-1">
+                                                <span class="px-2 py-0.5 text-[9px] font-bold rounded bg-blue-100 text-blue-800 shadow-sm">
+                                                    {{ $pelatih->kategori_fokus ?? '-' }}
+                                                </span>
+                                                <span class="px-2 py-0.5 text-[9px] font-bold rounded bg-purple-100 text-purple-800 shadow-sm">
+                                                    {{ $pelatih->gender_fokus ?? '-' }}
+                                                </span>
+                                            </div>
+                                        @endif
                                     </td>
 
                                     <td class="px-4 py-2 font-mono text-xs text-gray-600">

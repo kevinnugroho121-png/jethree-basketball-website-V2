@@ -48,8 +48,18 @@ class JadwalController extends Controller
             }
         }
 
+        // --- ATURAN BARU: FILTER ROLE PELATIH VS ROLE BYPASS (OWNER/ADMIN) ---
+        if ($user && $user->role === 'pelatih') {
+            // Jika pelatih biasa, hanya bisa melihat jadwal miliknya sendiri
+            $query->where('pelatih_id', $user->id);
+        }
+        // Jika $user->role adalah 'owner' atau 'admin' (Coach Irul), 
+        // baris di atas akan dilewati (Bypass), sehingga semua jadwal otomatis lolos tampil semua.
+
         // Sihir Urutan: Jadwal Hari Ini paling atas, diikuti jadwal masa depan, lalu riwayat masa lalu
         $query->selectRaw("jadwals.*, IF(DATE(tanggal) = '$today', 1, 0) as is_today")
+
+
             ->orderByRaw("IF(DATE(tanggal) = '$today', 1, 0) DESC")
             ->orderByRaw("CASE WHEN DATE(tanggal) > '$today' THEN 1 ELSE 2 END")
             ->orderBy('tanggal', 'desc');

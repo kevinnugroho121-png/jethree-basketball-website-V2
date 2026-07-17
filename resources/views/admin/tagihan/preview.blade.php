@@ -15,18 +15,42 @@
     <div class="py-6 px-4 sm:px-6 lg:px-8 h-screen"> {{-- h-screen agar tinggi full --}}
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg h-full border border-gray-300 flex flex-col">
             
-            {{-- Toolbar di atas PDF (Opsional) --}}
-            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+            {{-- Toolbar di atas PDF dengan Filter Interaktif --}}
+            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex flex-wrap justify-between items-center gap-3">
+                
+                {{-- Form Filter Bulan & Tahun Internal --}}
+                <form method="GET" action="{{ route('tagihan.preview') }}" class="flex flex-wrap items-center gap-2">
+                    {{-- Jaga agar filter kategori dari halaman depan tidak hilang --}}
+                    @if(request('kategori'))
+                        <input type="hidden" name="kategori" value="{{ request('kategori') }}">
+                    @endif
+
+                    @php
+                        $namaBulanIndo = [1=>'Januari', 2=>'Februari', 3=>'Maret', 4=>'April', 5=>'Mei', 6=>'Juni', 7=>'Juli', 8=>'Agustus', 9=>'September', 10=>'Oktober', 11=>'November', 12=>'Desember'];
+                    @endphp
+
+                    <select name="bulan" onchange="this.form.submit()" class="block h-9 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-green-500 text-xs px-3 shadow-sm">
+                        <option value="">Semua Bulan</option>
+                        @foreach($namaBulanIndo as $angka => $nama)
+                            <option value="{{ $angka }}" {{ request('bulan') == $angka ? 'selected' : '' }}>{{ $nama }}</option>
+                        @endforeach
+                    </select>
+
+                    <select name="tahun" onchange="this.form.submit()" class="block h-9 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-green-500 text-xs px-3 shadow-sm">
+                        @for($y = date('Y') - 1; $y <= 2030; $y++)
+                            <option value="{{ $y }}" {{ request('tahun', date('Y')) == $y ? 'selected' : '' }}>{{ $y }}</option>
+                        @endfor
+                    </select>
+                </form>
+
                 <span class="text-sm text-gray-500">
                     Menampilkan Laporan: 
-                    <b>
-                        {{ request('bulan') ? DateTime::createFromFormat('!m', request('bulan'))->format('F') : 'Semua Bulan' }} 
+                    <td class="font-bold text-gray-800">
+                        {{ request('bulan') ? $namaBulanIndo[request('bulan')] : 'Semua Bulan' }} 
                         {{ request('tahun') ?? date('Y') }}
-                    </b>
+                    </td>
                 </span>
                 
-                {{-- Tombol Download Langsung --}}
-                {{-- PERBAIKAN: Gunakan array_merge untuk menggabungkan query string yang sudah ada dengan parameter download --}}
                 <a href="{{ route('tagihan.cetak_pdf', array_merge(request()->query(), ['download' => 'true'])) }}" class="text-blue-600 hover:text-blue-800 text-sm font-bold underline">
                     Download File Asli
                 </a>

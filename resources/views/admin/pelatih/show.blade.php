@@ -89,8 +89,9 @@
                     
                     <div class="flex gap-2">
                         <button type="button" 
-                                onclick="bukaPdf('{{ route('pelatih.cetakPdf', $pelatih->id) }}')" 
-                                class="text-sm bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200 border border-red-200 font-medium transition flex items-center shadow-sm">
+        data-url="{{ route('pelatih.cetakPdf', $pelatih->id) }}"
+        onclick="bukaPdf(this.dataset.url)" 
+        class="text-sm bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200 border border-red-200 font-medium transition flex items-center shadow-sm">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                             Preview PDF
                         </button>
@@ -141,6 +142,25 @@
                                 @else
                                     <span class="text-gray-400 italic">Belum ada lisensi</span>
                                 @endif
+                            </span>
+                        </div>
+
+                        {{-- ⚡ BARU: DATA FOKUS KATEGORI & GENDER PADA DETAIL BIODATA --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-4">
+                            <span class="text-gray-500 text-sm font-medium">Kategori Umur Latihan</span>
+                            <span class="sm:col-span-2 text-gray-900 font-semibold">
+                                <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs border border-blue-200 shadow-sm">
+                                    {{ $pelatih->kategori_fokus ?? '-' }}
+                                </span>
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-4">
+                            <span class="text-gray-500 text-sm font-medium">Gender Fokus Latihan</span>
+                            <span class="sm:col-span-2 text-gray-900 font-semibold">
+                                <span class="bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs border border-purple-200 shadow-sm">
+                                    {{ $pelatih->gender_fokus ?? '-' }}
+                                </span>
                             </span>
                         </div>
 

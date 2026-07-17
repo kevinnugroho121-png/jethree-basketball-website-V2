@@ -158,18 +158,21 @@
                                     <h3 class="font-bold text-lg text-blue-600 mb-4 border-b pb-2">C. Data Akademi (Basket)</h3>
                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div class="mb-4">
-                                            {{-- [FIX] name="kategori" sesuai Controller --}}
-                                            <label class="block text-sm font-medium text-gray-700">Kategori</label>
-                                            {{-- ID "kategori_umur" tetap ada agar JS validasi umur tetap jalan --}}
-                                            <select name="kategori" id="kategori_umur" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-50" required>
+                                            <label class="block text-sm font-medium text-gray-700">Kategori Kelompok Umur</label>
+                                            <select name="kategori" id="kategori_umur" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-50 shadow-inner" required>
                                                 <option value="">-- Pilih Kategori --</option>
-                                                <option value="KU-10" {{ old('kategori') == 'KU-10' ? 'selected' : '' }}>KU-10 (SD)</option>
-                                                <option value="KU-12" {{ old('kategori') == 'KU-12' ? 'selected' : '' }}>KU-12 (SMP Awal)</option>
-                                                <option value="KU-14" {{ old('kategori') == 'KU-14' ? 'selected' : '' }}>KU-14 (SMP)</option>
-                                                <option value="KU-16" {{ old('kategori') == 'KU-16' ? 'selected' : '' }}>KU-16 (SMA)</option>
-                                                <option value="KU-18" {{ old('kategori') == 'KU-18' ? 'selected' : '' }}>KU-18 (SMA Akhir)</option>
+                                                <option value="KU-10 Putra" {{ old('kategori') == 'KU-10 Putra' ? 'selected' : '' }}>KU-10 Putra</option>
+                                                <option value="KU-10 Putri" {{ old('kategori') == 'KU-10 Putri' ? 'selected' : '' }}>KU-10 Putri</option>
+                                                <option value="KU-12 Putra" {{ old('kategori') == 'KU-12 Putra' ? 'selected' : '' }}>KU-12 Putra</option>
+                                                <option value="KU-12 Putri" {{ old('kategori') == 'KU-12 Putri' ? 'selected' : '' }}>KU-12 Putri</option>
+                                                <option value="KU-14 Putra" {{ old('kategori') == 'KU-14 Putra' ? 'selected' : '' }}>KU-14 Putra</option>
+                                                <option value="KU-14 Putri" {{ old('kategori') == 'KU-14 Putri' ? 'selected' : '' }}>KU-14 Putri</option>
+                                                <option value="KU-16 Putra" {{ old('kategori') == 'KU-16 Putra' ? 'selected' : '' }}>KU-16 Putra</option>
+                                                <option value="KU-16 Putri" {{ old('kategori') == 'KU-16 Putri' ? 'selected' : '' }}>KU-16 Putri</option>
+                                                <option value="KU-18 Putra" {{ old('kategori') == 'KU-18 Putra' ? 'selected' : '' }}>KU-18 Putra</option>
+                                                <option value="KU-18 Putri" {{ old('kategori') == 'KU-18 Putri' ? 'selected' : '' }}>KU-18 Putri</option>
                                             </select>
-                                            <p class="text-xs text-gray-500 mt-1">*Otomatis dari Tgl Lahir.</p>
+                                            <p class="text-xs text-gray-500 mt-1">*Otomatis menyesuaikan Tanggal Lahir & Jenis Kelamin.</p>
                                         </div>
                                         <div class="mb-4">
                                             <label class="block text-sm font-medium text-gray-700">Posisi</label>
@@ -252,13 +255,19 @@
         // maka kita tidak perlu Javascript untuk menggabungkannya.
 
         // 2. Script Validasi Umur & Kategori (Logika Mas Kevin Tetap Ada)
-        document.getElementById('tanggal_lahir').addEventListener('change', function() {
-            var dob = new Date(this.value);
-            var today = new Date();
-            var infoDiv = document.getElementById('info-umur');
+        // 2. ⚡ PERBAIKAN: Fungsi Hitung Kategori Reaktif (Tanggal Lahir + Jenis Kelamin)
+        function hitungKategoriOtomatis() {
+            var tglLahirInput = document.getElementById('tanggal_lahir').value;
+            var jkInput = document.querySelector('select[name="jenis_kelamin"]').value;
             
-            // Target ID 'kategori_umur' masih ada di elemen Select
+            var infoDiv = document.getElementById('info-umur');
             var kategoriSelect = document.getElementById('kategori_umur'); 
+            
+            // Jika tanggal lahir belum diisi, biarkan divisi informasi tersembunyi
+            if(!tglLahirInput) return;
+
+            var dob = new Date(tglLahirInput);
+            var today = new Date();
             
             infoDiv.className = "mt-2 text-sm p-2 rounded hidden"; 
             infoDiv.innerHTML = "";
@@ -297,26 +306,31 @@
                 kategoriSelect.value = ""; 
             }
             else {
-                var saran = "";
-                if (age <= 10) { kategoriSelect.value = "KU-10"; saran = "KU-10"; } 
-                else if (age <= 12) { kategoriSelect.value = "KU-12"; saran = "KU-12"; } 
-                else if (age <= 14) { kategoriSelect.value = "KU-14"; saran = "KU-14"; } 
-                else if (age <= 16) { kategoriSelect.value = "KU-16"; saran = "KU-16"; } 
-                else { kategoriSelect.value = "KU-18"; saran = "KU-18"; }
-                pesanHtml += '<br><span class="text-green-700 font-bold">✅ Rekomendasi Sistem: Masuk ' + saran + '</span>';
+                // Tentukan suffix gender: jika belum pilih jenis kelamin, default-kan ke Putra dulu
+                var genderSuffix = (jkInput === "Perempuan") ? "Putri" : "Putra";
+                var kuBase = "";
+                
+                if (age <= 10) { kuBase = "KU-10"; } 
+                else if (age <= 12) { kuBase = "KU-12"; } 
+                else if (age <= 14) { kuBase = "KU-14"; } 
+                else if (age <= 16) { kuBase = "KU-16"; } 
+                else { kuBase = "KU-18"; }
+                
+                var nilaiFinal = kuBase + " " + genderSuffix;
+                kategoriSelect.value = nilaiFinal;
+
+                pesanHtml += '<br><span class="text-green-700 font-bold">✅ Rekomendasi Sistem: Masuk ' + nilaiFinal + '</span>';
             }
 
             infoDiv.className = "mt-2 text-sm p-2 rounded " + kelasWarna;
             infoDiv.innerHTML = pesanHtml;
             infoDiv.classList.remove('hidden');
+        }
 
-            if (age >= 5 && age <= 18) {
-                kategoriSelect.classList.add('ring', 'ring-green-300');
-                setTimeout(() => {
-                    kategoriSelect.classList.remove('ring', 'ring-green-300');
-                }, 1000);
-            }
-        });
+        // ⚡ PASANG DI KEDUA ELEMENT: Biar saling memicu update secara real-time
+        document.getElementById('tanggal_lahir').addEventListener('change', hitungKategoriOtomatis);
+        document.querySelector('select[name="jenis_kelamin"]').addEventListener('change', hitungKategoriOtomatis);
+
     </script>
 
     {{-- TAMBAHKAN SCRIPT JQUERY UNTUK AJAX --}}

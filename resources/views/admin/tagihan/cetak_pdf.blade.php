@@ -53,9 +53,13 @@
             @forelse($laporan as $index => $item)
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td class="text-center">{{ $item->updated_at->format('d/m/Y') }}</td>
-                    <td>{{ $item->atlet->user->name ?? '-' }}</td>
-                    <td class="text-center">{{ $item->atlet->kategori_umur ?? '-' }}</td>
+                    {{-- 💡 Opsional Peningkatan: Menggunakan kolom tanggal_lunas real agar lebih akurat --}}
+                    <td class="text-center">{{ $item->tanggal_lunas ? \Carbon\Carbon::parse($item->tanggal_lunas)->format('d/m/Y') : $item->updated_at->format('d/m/Y') }}</td>
+                    <td>{{ $item->atlet->nama_lengkap ?? ($item->atlet->user->name ?? '-') }}</td>
+                    
+                    {{-- 💡 Perbaikan Utama: Ubah kategori_umur menjadi kategori sesuai kolom DB SQLyog --}}
+                    <td class="text-center">{{ $item->atlet->kategori ?? '-' }}</td>
+                    
                     <td>SPP {{ $item->bulan }} {{ $item->tahun }}</td>
                     <td class="text-right">Rp {{ number_format($item->nominal, 0, ',', '.') }}</td>
                 </tr>

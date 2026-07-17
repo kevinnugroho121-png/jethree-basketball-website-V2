@@ -55,22 +55,21 @@ class AbsensiController extends Controller
 
         $jadwal = Jadwal::findOrFail($jadwal_id);
 
-        // 2. VALIDASI LOGIKA (WAJIB ISI NILAI JIKA HADIR)
-        foreach ($request->data as $atlet_id => $val) {
-            // CEK 1: Jika status tidak diisi (misal atlet dilewati), lewati pengecekan ini
-            if (!isset($val['status'])) {
-                continue;
-            }
 
-            // Jika statusnya HADIR (H), pastikan nilai tidak kosong
-            if ($val['status'] == 'H') {
-                if (empty($val['dribble']) || empty($val['pass']) || empty($val['shoot']) || empty($val['iq'])) {
-                    return redirect()->back()
-                        ->withInput()
-                        ->with('error', 'Gagal Simpan! Atlet yang HADIR wajib diisi nilai Dribble, Pass, Shoot, dan IQ.');
-                }
-            }
-        }
+
+        // REVISI POIN 13 & 14: Hapus pemaksaan nilai angka harian, ganti wajib isi materi latihan
+        $request->validate([
+            'materi' => 'required|string|min:5',
+        ], [
+            'materi.required' => 'Gagal Simpan! Deskripsi menu latihan hari ini wajib diisi sebelum menutup absensi.',
+        ]);
+
+        $jadwal = Jadwal::findOrFail($jadwal_id);
+        
+        // REVISI POIN 15: Admin mem-backup pengisian materi latihan dari pelatih
+        $jadwal->update(['materi' => $request->materi]);
+
+        
 
         // 3. LOOPING SIMPAN DATA
         foreach ($request->data as $atlet_id => $val) {

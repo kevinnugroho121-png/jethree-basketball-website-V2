@@ -156,13 +156,24 @@
                                     <h3 class="font-bold text-lg text-blue-600 mb-4 border-b pb-2">C. Data Akademi (Basket)</h3>
                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         
-                                        {{-- PENGAMANAN 2: KATEGORI TERKUNCI --}}
+                                        {{-- ⚡ REVISI: Buka Kunci Kategori agar Admin bisa update format Gender --}}
                                         <div class="mb-4">
-                                            <label for="kategori_show" class="block text-sm font-medium text-gray-700">Kategori (Terkunci) 🔒</label>
-                                            <input type="text" id="kategori_show" value="{{ $atlet->kategori }}" 
-                                                   class="mt-1 block w-full rounded-md border-gray-200 bg-gray-200 text-gray-500 cursor-not-allowed shadow-sm sm:text-sm" readonly>
-                                            {{-- Kirim nilai kategori asli (hidden) agar validasi controller tetap lulus --}}
-                                            <input type="hidden" name="kategori" value="{{ $atlet->kategori }}">
+                                            <label for="kategori" class="block text-sm font-medium text-gray-700">Kategori Kelompok Umur</label>
+                                            <select name="kategori" id="kategori_umur" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                                                <option value="">-- Pilih Kategori --</option>
+                                                
+                                                {{-- ⚡ LOGIKA TAMBAHAN: Jika data lama tidak ada di daftar baru, tampilkan agar tidak hilang --}}
+                                                @if(!in_array($atlet->kategori, ['KU-10 Putra', 'KU-10 Putri', 'KU-12 Putra', 'KU-12 Putri', 'KU-14 Putra', 'KU-14 Putri', 'KU-16 Putra', 'KU-16 Putri', 'KU-18 Putra', 'KU-18 Putri']))
+                                                    <option value="{{ $atlet->kategori }}" selected>{{ $atlet->kategori }} (Data Lama - Harap Ubah!)</option>
+                                                @endif
+
+                                                @foreach(['KU-10 Putra', 'KU-10 Putri', 'KU-12 Putra', 'KU-12 Putri', 'KU-14 Putra', 'KU-14 Putri', 'KU-16 Putra', 'KU-16 Putri', 'KU-18 Putra', 'KU-18 Putri'] as $katOption)
+                                                    <option value="{{ $katOption }}" {{ old('kategori', $atlet->kategori) == $katOption ? 'selected' : '' }}>
+                                                        {{ $katOption }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <p class="text-xs text-red-500 mt-1">*Pilih ulang kategori agar memiliki gender (Putra/Putri).</p>
                                         </div>
 
                                         <div class="mb-4">
@@ -222,7 +233,7 @@
         </div>
     </div>
 
-    {{-- SCRIPT JAVASCRIPT: PREVIEW FOTO EDIT (VERSI AMAN) --}}
+    {{-- SCRIPT JAVASCRIPT: PREVIEW FOTO EDIT & AUTO UPDATE GENDER KATEGORI --}}
     <script>
         function previewImage(event) {
             const file = event.target.files[0];
@@ -233,11 +244,26 @@
                     const placeholder = document.getElementById('placeholder-foto');
                     
                     output.src = e.target.result;
-                    output.classList.remove('hidden'); // Munculkan gambar baru
-                    placeholder.classList.add('hidden'); // Sembunyikan placeholder
+                    output.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
                 };
                 reader.readAsDataURL(file);
             }
         }
+
+        // ⚡ BARU: Logika pengubah suffix Kategori mengikuti dropdown Jenis Kelamin
+        document.querySelector('select[name="jenis_kelamin"]').addEventListener('change', function() {
+            const kategoriSelect = document.getElementById('kategori_umur');
+            const nilaiSekarang = kategoriSelect.value;
+            
+            if (nilaiSekarang) {
+                // Pecah teks (Contoh: "KU-12 Putra" diambil bagian "KU-12" nya saja)
+                const kuBase = nilaiSekarang.split(' ')[0]; 
+                const suffixBaru = (this.value === "Perempuan") ? "Putri" : "Putra";
+                
+                // Set nilai final baru ke dropdown kategori secara instan
+                kategoriSelect.value = kuBase + " " + suffixBaru;
+            }
+        });
     </script>
-</x-app-layout> 
+</x-app-layout>

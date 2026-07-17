@@ -33,21 +33,37 @@ class InputNilaiController extends Controller
         ]);
 
         try {
-            // CARI ID PELATIH YANG VALID (Otomatis)
-            // Ambil data pelatih pertama yang ditemukan di database
-            $pelatih = Pelatih::first();
 
-            // Jaga-jaga kalau tabel pelatih kosong melompong
-            if (!$pelatih) {
+        
+            // ==================== KODE YANG BENAR (GANTI DENGAN INI) ====================
+            // CARI ID PELATIH YANG VALID (Dinamis Mengikuti Dropdown Flutter / Session Login)
+            $user = $request->user();
+            $pelatihId = null;
+
+            // 1. Jika ada kiriman 'pelatih_id' dari dropdown Flutter (Akses khusus Coach Irul)
+            if ($request->has('pelatih_id') && $request->pelatih_id != null) {
+                $pelatihId = $request->pelatih_id;
+            } 
+            // 2. Jika pelatih biasa yang input (Dropdown tersembunyi), otomatis ambil ID-nya dari session login
+            else {
+                $pelatihAsli = \App\Models\Pelatih::where('user_id', $user->id)->first();
+                $pelatihId = $pelatihAsli ? $pelatihAsli->id : null;
+            }
+
+            // Jaga-jaga kalau pelatih tidak ditemukan di sistem
+            if (!$pelatihId) {
                 return response()->json([
                     'success' => false, 
-                    'message' => 'Error: Data Pelatih Kosong di Database. Tambahkan 1 pelatih dulu.'
-                ], 500);
+                    'message' => 'Error: Profil Pelatih tidak ditemukan atau belum dipilih.'
+                ], 404);
             }
 
             // SIMPAN DATA
             $nilai = ProgresAtlet::create([
-                'pelatih_id' => $pelatih->id,    // <--- PAKAI ID ASLI (Bukan tebakan angka 1)
+                'pelatih_id' => $pelatihId,    // <--- SEKARANG SUDAH 100% DINAMIS DI LAPANGAN
+                
+                
+                
                 'atlet_id'   => $request->atlet_id,
                 
                 'teknik'     => $request->teknik,

@@ -8,7 +8,8 @@
     <div class="py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             {{-- Tombol Kembali --}}
-            <a href="{{ route('tagihan.index') }}" class="inline-flex items-center mb-4 px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none transition ease-in-out duration-150">
+            {{-- 💡 Perbaikan: Diubah agar tujuannya mundur ke riwayat data tagihan atlet yang bersangkutan --}}
+            <a href="{{ route('tagihan.show', $tagihan->atlet_id) }}" class="inline-flex items-center mb-4 px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none transition ease-in-out duration-150">
                 &larr; Kembali
             </a>
 
@@ -38,24 +39,45 @@
                              class="max-h-[500px] shadow-lg rounded object-contain border border-gray-200">
                     </div>
 
-                    {{-- TOMBOL AKSI VERIFIKASI --}}
-                    <div class="mt-6 flex justify-end gap-3">
-                        {{-- Tombol Hapus Bukti (Jika tidak valid) --}}
-                        {{-- Opsi tambahan: Bisa ditambahkan fitur tolak bukti disini nanti --}}
-                        
-                        {{-- Tombol Validasi --}}
+                    {{-- TOMBOL AKSI VERIFIKASI (SINKRON DENGAN PENOLAKAN MOBILE) --}}
+                    <div class="mt-6">
                         @if($tagihan->status != 'Lunas')
-                            <form action="{{ route('tagihan.verifikasi_lunas', $tagihan->id) }}" method="POST">
-                                @csrf
-                                @method('PUT')
-                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none transition ease-in-out duration-150" onclick="return confirm('Apakah bukti ini valid dan lunas?')">
-                                    Verifikasi Lunas
-                                </button>
-                            </form>
+                            {{-- Kotak Input Alasan Penolakan Berwarna Merah Khas Sistem J3 --}}
+                            <div class="p-4 border border-red-200 rounded-lg bg-red-50 mb-4">
+                                {{-- Form Penolakan terpisah, menembak route update bawaan --}}
+                                <form action="{{ route('tagihan.update', $tagihan->id) }}" method="POST" id="form-tolak-pembayaran">
+                                    @csrf
+                                    @method('PUT')
+                                    {{-- Mengirimkan instruksi balik status ke Belum Lunas --}}
+                                    <input type="hidden" name="status" value="Belum Lunas">
+                                    
+                                    <label class="block text-sm font-bold text-red-700 mb-1">Alasan Penolakan / Catatan Nominal Kurang ❌</label>
+                                    <textarea name="catatan_penolakan" rows="2" placeholder="Contoh: Nominal transfer kurang Rp 50.000 atau berkas struk buram/tidak valid." required class="w-full rounded-md border-red-300 shadow-sm focus:border-red-500 focus:ring-red-500 text-sm mb-3"></textarea>
+                                </form>
+
+                                <div class="flex justify-end gap-3">
+                                    {{-- Tombol Tolak (Terhubung ke form-tolak-pembayaran menggunakan atribut form) --}}
+                                    <button type="submit" form="form-tolak-pembayaran" onclick="return confirm('Yakin ingin menolak bukti transfer ini? Berkas struk lama otomatis dihapus agar atlet bisa upload struk ulang.')" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:outline-none transition ease-in-out duration-150">
+                                        Tolak Pembayaran
+                                    </button>
+                                    
+                                    {{-- Tombol Verifikasi Lunas Bawaan Kamu Tetap Berdiri Gagah Disini --}}
+                                    <form action="{{ route('tagihan.verifikasi_lunas', $tagihan->id) }}" method="POST" class="inline-block">
+                                        @csrf
+                                        @method('PUT')
+                                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none transition ease-in-out duration-150" onclick="return confirm('Apakah bukti ini valid dan lunas?')">
+                                            Verifikasi Lunas
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         @else
-                            <span class="px-4 py-2 bg-green-100 text-green-800 rounded font-bold border border-green-200">
-                                Sudah Lunas
-                            </span>
+                            {{-- Tampilan jika data tagihan memang sudah diselesaikan/lunas --}}
+                            <div class="flex justify-end">
+                                <span class="px-4 py-2 bg-green-100 text-green-800 rounded font-bold border border-green-200">
+                                    Sudah Lunas
+                                </span>
+                            </div>
                         @endif
                     </div>
 

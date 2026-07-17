@@ -95,11 +95,13 @@ class PembayaranController extends Controller
             $jumlahBulan = count($request->tagihan_ids);
             
             \App\Models\Notifikasi::create([
-                'user_id'  => $admin->id,
-                'judul'    => 'Ada Pembayaran Baru! 💰',
-                'pesan'    => "Atlet {$namaAtlet} telah membayar {$jumlahBulan} bulan Tagihan/SPP. Segera cek menu Keuangan untuk Verifikasi Lunas.",
-                'kategori' => 'pembayaran',
-                'is_read'  => false,
+                'user_id'     => $admin->id,
+                'sender_id'   => Auth::id(),          // 💡 TAMBAHAN: Catat ID user atlet yang transfer sebagai pengirim
+                'target_role' => 'admin',             // 💡 TAMBAHAN: Kunci target role secara spesifik ke admin
+                'judul'       => 'Ada Pembayaran Baru! 💰',
+                'pesan'       => "Atlet {$namaAtlet} telah membayar {$jumlahBulan} bulan Tagihan/SPP. Segera cek menu Keuangan untuk Verifikasi Lunas.",
+                'kategori'    => 'pembayaran',
+                'is_read'     => false,
             ]);
         }
         // ==========================================

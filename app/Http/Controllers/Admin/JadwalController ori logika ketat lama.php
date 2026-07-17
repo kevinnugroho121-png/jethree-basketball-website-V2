@@ -58,93 +58,44 @@ class JadwalController extends Controller
     /**
      * Simpan jadwal baru.
      */
-
-
     public function store(Request $request)
     {
-        // 1. Validasi Input (Menerima deretan string tanggal terpisah koma)
+        // 1. Validasi Input
         $request->validate([
-            'tanggal'     => 'required|string', 
+            'tanggal'     => 'required|date|after_or_equal:today', 
             'kategori'    => 'required',
-            'gender'      => 'required', 
             'jam_mulai'   => 'required',
             'jam_selesai' => 'required|after:jam_mulai', 
             'lokasi'      => 'required',
             'status'      => 'required',
+            'pelatih_id'  => 'required|exists:pelatihs,id',
+            'materi'      => 'required|string', // Kolom materi wajib diisi
         ]);
 
-        // Otomatis cari Coach aktif berdasarkan Kategori & Gender Fokus
-        $pelatihDitugaskan = Pelatih::where('status', 'Aktif')
-            ->where('kategori_fokus', $request->kategori)
-            ->where('gender_fokus', $request->gender)
+        // 2. Cek Bentrok (Satpam Waktu)
+        $bentrok = Jadwal::where('pelatih_id', $request->pelatih_id)
+            ->where('tanggal', $request->tanggal)
+            ->where(function ($query) use ($request) {
+                // Rumus Irisan Waktu: (Start1 < End2) AND (End1 > Start2)
+                $query->where('jam_mulai', '<', $request->jam_selesai)
+                      ->where('jam_selesai', '>', $request->jam_mulai);
+            })
             ->first();
 
-        if (!$pelatihDitugaskan) {
+        if ($bentrok) {
+            $namaPelatih = Pelatih::find($request->pelatih_id)->nama_lengkap;
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['kategori' => "❌ GAGAL: Tidak ditemukan Coach Aktif yang memegang spesialisasi kelas {$request->kategori} {$request->gender}."]);
-        }
-
-        // ⚡ BARU: Pecah string tanggal gabungan Flatpickr menjadi array
-        $daftarTanggal = explode(', ', $request->tanggal);
-        $jadwalDibuat = 0;
-        $listBentrok = [];
-        $jadwal = null; // Penampung objek untuk kebutuhan notifikasi di bawah
-
-        // Loop untuk mengecek bentrok dan menyimpan data per tanggal
-        foreach ($daftarTanggal as $tgl) {
-            
-            $bentrok = Jadwal::where('pelatih_id', $pelatihDitugaskan->id)
-                ->where('tanggal', $tgl)
-                ->where(function ($query) use ($request) {
-                    $query->where('jam_mulai', '<', $request->jam_selesai)
-                          ->where('jam_selesai', '>', $request->jam_mulai);
-                })
-                ->first();
-
-            if ($bentrok) {
-                $listBentrok[] = date('d M Y', strtotime($tgl));
-                continue; 
-            }
-
-            // Simpan baris data satu per satu
-            $jadwal = Jadwal::create([
-                'tanggal'     => $tgl,
-                'kategori'    => $request->kategori,
-                'jam_mulai'   => $request->jam_mulai,
-                'jam_selesai' => $request->jam_selesai,
-                'lokasi'      => $request->lokasi,
-                'status'      => $request->status,
-                'pelatih_id'  => $pelatihDitugaskan->id,
-                'materi'      => 'Belum diisi oleh Coach', 
-            ]);
-            
-            $jadwalDibuat++;
-        }
-
-        // Jika semua opsi tanggal yang diklik ternyata berujung bentrok
-        if ($jadwalDibuat === 0) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['tanggal' => "❌ GAGAL: Semua tanggal latihan yang dipilih bentrok dengan jam melatih Coach {$pelatihDitugaskan->nama_lengkap}."]);
-        }
-
-        // Penyesuaian teks flash message informasi performa sistem
-        $pesanSukses = "Berhasil membuat {$jadwalDibuat} jadwal latihan baru!";
-        if (count($listBentrok) > 0) {
-            $pesanSukses .= " (Dilewati otomatis karena bentrok pada tanggal: " . implode(', ', $listBentrok) . ").";
+                ->withErrors(['pelatih_id' => "❌ GAGAL: Coach $namaPelatih sudah ada jadwal lain di jam tersebut ($bentrok->jam_mulai - $bentrok->jam_selesai)."]);
         }
         
-        session()->flash('success', $pesanSukses);
-
-        
+        // 3. Simpan Jadwal ke Database
+        $jadwal = Jadwal::create($request->all());
 
         // ========================================================
         // [TAMBAHAN] KIRIM NOTIFIKASI KE LONCENG PELATIH
         // ========================================================
-        // (Kev: Baris di bawah tetap utuh menggunakan variabel pelatih otomatis)
-
-
+        $pelatihDitugaskan = Pelatih::find($request->pelatih_id);
         if ($pelatihDitugaskan && $pelatihDitugaskan->user_id) {
             Notifikasi::create([
                 'user_id'     => $pelatihDitugaskan->user_id,
@@ -208,7 +159,7 @@ class JadwalController extends Controller
                 $pesanWA .= "🗓 Tanggal: *" . date('d M Y', strtotime($request->tanggal)) . "*\n";
                 $pesanWA .= "⏰ Jam: *" . $request->jam_mulai . " - " . $request->jam_selesai . " WIB*\n";
                 $pesanWA .= "📍 Lokasi: *" . $request->lokasi . "*\n";
-                $pesanWA .= "📝 Materi: *" . $jadwal->materi . "*\n\n";
+                $pesanWA .= "📝 Materi: *" . $request->materi . "*\n\n";
                 $pesanWA .= "-----------------------------------\n";
                 $pesanWA .= $pesanSPP . "\n";
                 $pesanWA .= "-----------------------------------\n\n";
@@ -276,34 +227,22 @@ class JadwalController extends Controller
     {
         $jadwal = Jadwal::findOrFail($id);
 
-        // 1. Validasi Input Ringkas (Kev: Hapus kewajiban pelatih_id & materi dari Admin)
+        // 1. Validasi
         $request->validate([
             'tanggal'     => 'required|date|after_or_equal:today',
             'kategori'    => 'required',
-            'gender'      => 'required', // ⚡ BARU: Gender wajib dideteksi saat edit
             'jam_mulai'   => 'required',
             'jam_selesai' => 'required|after:jam_mulai',
             'lokasi'      => 'required',
             'status'      => 'required',
+            'pelatih_id'  => 'required|exists:pelatihs,id',
+            'materi'      => 'required|string',
         ]);
 
-        // ⚡ BARU: Otomatis cari Coach aktif pengganti berdasarkan Kategori & Gender Fokus baru
-        $pelatih = Pelatih::where('status', 'Aktif')
-            ->where('kategori_fokus', $request->kategori)
-            ->where('gender_fokus', $request->gender)
-            ->first();
-
-        // Proteksi jika belum ada coach yang disetting memegang kelas ini
-        if (!$pelatih) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['kategori' => "❌ GAGAL: Tidak ditemukan Coach Aktif yang memegang kelas {$request->kategori} {$request->gender}."]);
-        }
-
-        // 2. Cek Bentrok menggunakan ID Pelatih yang ditemukan otomatis (kecuali jadwal ini sendiri)
-        $bentrok = Jadwal::where('pelatih_id', $pelatih->id)
+        // 2. Cek Bentrok (Kecuali jadwal ini sendiri)
+        $bentrok = Jadwal::where('pelatih_id', $request->pelatih_id)
             ->where('tanggal', $request->tanggal)
-            ->where('id', '!=', $id)
+            ->where('id', '!=', $id) 
             ->where(function ($query) use ($request) {
                 $query->where('jam_mulai', '<', $request->jam_selesai)
                       ->where('jam_selesai', '>', $request->jam_mulai);
@@ -311,16 +250,13 @@ class JadwalController extends Controller
             ->first();
 
         if ($bentrok) {
+            $namaPelatih = Pelatih::find($request->pelatih_id)->nama_lengkap;
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['kategori' => "❌ GAGAL: Coach {$pelatih->nama_lengkap} bentrok dengan jadwal lain di jam tersebut ($bentrok->jam_mulai - $bentrok->jam_selesai)."]);
+                ->withErrors(['pelatih_id' => "❌ GAGAL: Coach $namaPelatih bentrok dengan jadwal lain ($bentrok->jam_mulai - $bentrok->jam_selesai)."]);
         }
         
-        // 3. Masukkan ID Pelatih baru ke dalam data update
-        $updateData = $request->all();
-        $updateData['pelatih_id'] = $pelatih->id;
-
-        $jadwal->update($updateData);
+        $jadwal->update($request->all());
         
         return redirect()->route('jadwal.index')
             ->with('success', 'Jadwal berhasil diperbarui.');

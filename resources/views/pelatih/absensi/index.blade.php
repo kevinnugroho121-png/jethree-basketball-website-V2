@@ -166,6 +166,10 @@
                                         {{ substr($item->jam_mulai, 0, 5) }} - {{ substr($item->jam_selesai, 0, 5) }}
                                     </td>
 
+
+
+                                    
+
                                     {{-- ISI KOLOM BARU: REKAP HADIR CEPAT --}}
                                     <td class="px-5 py-2 text-center">
                                         @if($isSudahDiabsen)

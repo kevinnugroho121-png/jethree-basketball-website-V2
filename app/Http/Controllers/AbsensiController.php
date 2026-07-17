@@ -106,11 +106,24 @@ class AbsensiController extends Controller
     /**
      * SIMPAN DATA: Logika Penyimpanan yang Konsisten (Bisa Satuan/Semua).
      */
+
+
     public function store(Request $request, $jadwal_id)
     {
-        $request->validate(['data' => 'required|array']);
+        // REVISI POIN 13: Pelatih wajib mengisi deskripsi menu latihan di web/mobile sebelum data disimpan
+        $request->validate([
+            'data'   => 'required|array',
+            'materi' => 'required|string|min:5',
+        ], [
+            'materi.required' => 'Gagal! Anda wajib mengisi kotak deskripsi menu latihan hari ini terlebih dahulu.',
+        ]);
 
         $jadwal = Jadwal::findOrFail($jadwal_id);
+        
+        // REVISI POIN 13 & 15: Kunci materi harian langsung ke record jadwal kelas terkait
+        $jadwal->update(['materi' => $request->materi]);
+
+        
 
         foreach ($request->data as $atlet_id => $val) {
             
@@ -121,6 +134,22 @@ class AbsensiController extends Controller
                 continue; 
             }
 
+
+            // ==================== KODE YANG BENAR (GANTI DENGAN INI) ====================
+            // 1. Deteksi ID Pelatih yang bereksekusi di lapangan
+            $userLog = Auth::user();
+            $pelatihHadirId = null;
+
+            // Jika Coach Irul memilih pelatih lain/dirinya sendiri dari dropdown request
+            if ($request->has('pelatih_id') && $request->pelatih_id != null) {
+                $pelatihHadirId = $request->pelatih_id;
+            } 
+            // Jika pelatih reguler yang login, otomatis pakai ID pelatihnya sendiri
+            else {
+                $pelatihHadirId = ($userLog->role === 'pelatih' && $userLog->pelatih) ? $userLog->pelatih->id : null;
+            }
+
+            // 2. Simpan ke database absensi
             Absensi::updateOrCreate(
                 [
                     'jadwal_id' => $jadwal->id,
@@ -128,7 +157,10 @@ class AbsensiController extends Controller
                 ],
                 [
                     'status'          => $val['status'], 
-                    'tanggal_latihan' => $jadwal->tanggal, // Otomatis isi tanggal
+                    'tanggal_latihan' => $jadwal->tanggal, 
+                    
+                    // SUNTIKAN LOGIKA BARU: Mencatat siapa yang melatih riil di lapangan
+                    'pelatih_hadir_id'=> $pelatihHadirId, 
                     
                     'nilai_dribble'   => $val['dribble'] ?? null,
                     'nilai_pass'      => $val['pass'] ?? null,
@@ -138,6 +170,9 @@ class AbsensiController extends Controller
                     'catatan'         => $val['catatan'] ?? null, 
                 ]
             );
+// ============================================================================
+
+
         }
 
         // Redirect Back agar Pelatih tetap di halaman itu dan melihat Pop-up Sukses

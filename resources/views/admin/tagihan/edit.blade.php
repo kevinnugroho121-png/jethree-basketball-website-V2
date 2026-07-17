@@ -73,7 +73,7 @@
                                     {{ $tagihan->status == 'Lunas' ? 'disabled' : '' }}> {{-- Jika Lunas, disable edit --}}
                                     
                                     <option value="Belum Lunas" {{ (old('status', $tagihan->status) == 'Belum Lunas') ? 'selected' : '' }}>❌ Belum Lunas</option>
-                                    <option value="Lunas" {{ (old('status', $tagihan->status) == 'Lunas') ? 'selected' : '' }}>✅ Lunas (Bayar Sekarang)</option>
+                                    <option value="Lunas" {{ (old('status', $tagihan->status) == 'Lunas') ? 'selected' : '' }}>✅ Lunas</option>
                                 </select>
                                 
                                 {{-- Trik agar value tetap terkirim meski disabled --}}
@@ -82,7 +82,7 @@
                                 @endif
                             </div>
 
-                            {{-- 2. METODE PEMBAYARAN --}}
+                            {{-- 2. METODE PEMBAYARAN (Mendukung Deteksi Midtrans Gateway) --}}
                             <div class="col-span-1">
                                 <label class="block text-sm font-bold text-gray-700 mb-1">Metode Pembayaran</label>
                                 <select name="metode_pembayaran" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -92,22 +92,36 @@
                                     <option value="Tunai (Cash)" {{ (old('metode_pembayaran', $tagihan->metode_pembayaran) == 'Tunai (Cash)') ? 'selected' : '' }}>💵 Tunai (Cash)</option>
                                     <option value="Transfer Bank" {{ (old('metode_pembayaran', $tagihan->metode_pembayaran) == 'Transfer Bank') ? 'selected' : '' }}>🏦 Transfer Bank</option>
                                     <option value="Transfer (Via Mobile)" {{ (old('metode_pembayaran', $tagihan->metode_pembayaran) == 'Transfer (Via Mobile)') ? 'selected' : '' }}>📱 Transfer (Via Mobile)</option>
+                                    
+                                    {{-- 💡 Tambahan: Jika lunas tapi tidak memakai metode manual, tandanya dibayar otomatis lewat Midtrans --}}
+                                    @if($tagihan->status == 'Lunas' && !in_array($tagihan->metode_pembayaran, ['Tunai (Cash)', 'Transfer Bank', 'Transfer (Via Mobile)']))
+                                        <option value="Midtrans" selected>🌐 Otomatis (Midtrans Gateway)</option>
+                                    @endif
                                 </select>
+                                
+                                {{-- Hidden input pendukung jika statusnya disabilitas (disabled) --}}
+                                @if($tagihan->status == 'Lunas' && !in_array($tagihan->metode_pembayaran, ['Tunai (Cash)', 'Transfer Bank', 'Transfer (Via Mobile)']))
+                                    <input type="hidden" name="metode_pembayaran" value="Midtrans">
+                                @endif
                             </div>
 
-                            {{-- 3. BUKTI PEMBAYARAN (UPLOAD FOTO) --}}
+                            {{-- 3. BUKTI PEMBAYARAN (UPLOAD FOTO / INFORMASI MIDTRANS) --}}
                             <div class="col-span-2">
                                 <label class="block text-sm font-bold text-gray-700 mb-1">
                                     Bukti Pembayaran (Wajib)
                                     <span class="text-xs font-normal text-gray-500">- Upload foto uang cash atau struk transfer</span>
                                 </label>
 
-                                {{-- Jika sudah ada foto, tampilkan --}}
-                                @if($tagihan->bukti_pembayaran)
+                                {{-- Jika ada file gambar manual, tampilkan fotonya --}}
+                                @if($tagihan->bukti_pembayaran && !str_starts_with($tagihan->bukti_pembayaran, 'MIDTRANS-'))
                                     <div class="mb-3 p-2 border rounded bg-gray-50 inline-block">
                                         <p class="text-xs text-gray-500 mb-1">Bukti Tersimpan:</p>
-                                        {{-- Pastikan nanti jalankan: php artisan storage:link --}}
                                         <img src="{{ asset('storage/' . $tagihan->bukti_pembayaran) }}" alt="Bukti Bayar" class="h-40 rounded shadow-sm object-cover bg-white border">
+                                    </div>
+                                {{-- 💡 Tambahan: Jika berstatus Lunas tanpa file gambar, beri tahu kasir/dosen bahwa ini data Midtrans --}}
+                                @elseif($tagihan->status == 'Lunas' && !$tagihan->bukti_pembayaran)
+                                    <div class="mb-4 p-3 border border-blue-200 rounded-lg bg-blue-50 text-blue-800 text-xs font-semibold flex items-center gap-2 max-w-xl">
+                                        <span>🌐 Transaksi Berhasil melalui Sistem Otomatis Midtrans Payment Gateway (Paperless / Tanpa Upload Struk).</span>
                                     </div>
                                 @endif
 
@@ -122,7 +136,7 @@
                                     "/>
                                     <p class="text-xs text-gray-500 mt-1">Biarkan kosong jika tidak ingin mengubah bukti yang sudah ada.</p>
                                 @else
-                                    <p class="text-sm text-green-600 italic">🔒 Bukti pembayaran terkunci karena status sudah Lunas.</p>
+                                    <p class="text-sm text-green-600 italic font-medium">🔒 Bukti pembayaran terkunci karena status sudah Lunas.</p>
                                 @endif
                             </div>
 
@@ -132,11 +146,28 @@
                                 <textarea name="keterangan" rows="2" class="w-full rounded-md border-gray-300 shadow-sm" {{ $tagihan->status == 'Lunas' ? 'disabled' : '' }}>{{ old('keterangan', $tagihan->keterangan) }}</textarea>
                             </div>
 
+                            {{-- 💡 5. ALASAN PENOLAKAN (SINKRONISASI FLUTTER MOBILE) --}}
+                            {{-- Hanya muncul jika status tagihan belum Lunas agar tidak memenuhi layar --}}
+                            @if($tagihan->status != 'Lunas')
+                                <div class="col-span-2 border-l-4 border-red-500 bg-red-50 p-4 rounded-r-md">
+                                    <label class="block text-sm font-bold text-red-700 mb-1">
+                                        Alasan Penolakan / Catatan Nominal Kurang ❌
+                                    </label>
+                                    <textarea name="catatan_penolakan" rows="2" 
+                                              placeholder="Contoh: Nominal transfer kurang Rp 50.000 atau gambar struk buram/tidak jelas." 
+                                              class="w-full rounded-md border-red-300 shadow-sm focus:border-red-500 focus:ring-red-500 text-sm text-red-900 bg-white shadow-inner">{{ old('catatan_penolakan', $tagihan->catatan_penolakan) }}</textarea>
+                                    <p class="text-[11px] text-red-600 mt-1 font-medium">
+                                        *PENTING: Jika status diatur ke "Belum Lunas" dan kolom ini diisi, sistem otomatis menghapus struk lama di storage agar atlet bisa mengunggah ulang struk baru dari aplikasi HP.
+                                    </p>
+                                </div>
+                            @endif
+
                         </div>
 
                         {{-- TOMBOL AKSI --}}
                         <div class="flex justify-end mt-8 gap-3 border-t pt-4">
-                            <a href="{{ route('tagihan.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md font-bold hover:bg-gray-300 transition">
+                            {{-- 💡 Perbaikan: Diarahkan ke halaman show riwayat tagihan atlet yang bersangkutan --}}
+                            <a href="{{ route('tagihan.show', $tagihan->atlet_id) }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md font-bold hover:bg-gray-300 transition">
                                 Kembali
                             </a>
 

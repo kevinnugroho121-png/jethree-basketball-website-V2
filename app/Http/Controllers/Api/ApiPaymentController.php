@@ -68,16 +68,20 @@ class ApiPaymentController extends Controller
         ];
 
         try {
-            // Minta Snap Token ke Server Midtrans
-            $snapToken = Snap::getSnapToken($params);
 
-            // Kirim token balik ke Aplikasi HP
+
+            // REVISI POIN 2: Gunakan createTransaction agar Token & Redirect URL di-generate otomatis secara dinamis oleh SDK Midtrans
+            $transaction = Snap::createTransaction($params);
+
+            // Kirim token dan redirect_url bawaan SDK asli balik ke Aplikasi HP
             return response()->json([
                 'success' => true,
-                'snap_token' => $snapToken,
-                'redirect_url' => 'https://app.sandbox.midtrans.com/snap/v2/vtweb/' . $snapToken, 
+                'snap_token' => $transaction->token,
+                'redirect_url' => $transaction->redirect_url, // Otomatis mendeteksi Sandbox/Production secara internal tanpa hardcode URL string
                 'order_id_midtrans' => $orderIdCustom 
             ]);
+
+
 
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -104,10 +108,59 @@ class ApiPaymentController extends Controller
 
             // Cek Status Transaksi
             if ($request->transaction_status == 'capture' || $request->transaction_status == 'settlement') {
-                // LUNAS: Update database
-                $tagihan->update(['status' => 'Lunas']);
+                // LUNAS: Update database beserta tanggal lunasnya secara permanen
+                $tagihan->update([
+                    'status' => 'Lunas',
+                    'tanggal_lunas' => now()
+                ]);
+
+                // Otomatis membuat riwayat di tabel pembayarans agar masuk database SQLyog
+                \App\Models\Pembayaran::create([
+                    'tagihan_id'         => $tagihan->id,
+                    'atlet_id'           => $tagihan->atlet_id,
+                    'metode'             => 'Midtrans (' . ($request->payment_type ?? 'Otomatis') . ')',
+                    'bukti_pembayaran'   => 'MIDTRANS-' . $request->transaction_id, 
+                    'tanggal_pembayaran' => now(), 
+                    'jumlah_dibayar'     => $tagihan->nominal, // 💡 SUNTIKAN KODE: Isi nominal agar database tidak crash!
+                ]);
+
+                // =========================================================================
+                // 💡 SUNTIKAN BARU: Otomatis Mengisi Tabel Notifikasis untuk Lonceng
+                // =========================================================================
+                // Panggil relasi atlet secara dinamis untuk mengambil data nama dan user_id
+                $tagihan->load('atlet');
+                $atlet = $tagihan->atlet;
+
+                if ($atlet) {
+                    // 1. Kirim ke Lonceng Semua Akun Admin (Info Uang Masuk)
+                    $admins = \App\Models\User::where('role', 'admin')->get();
+                    foreach ($admins as $admin) {
+                        \App\Models\Notifikasi::create([
+                            'user_id'     => $admin->id,
+                            'sender_id'   => $atlet->user_id, // Atlet sebagai pemicu notif
+                            'target_role' => 'admin',
+                            'judul'       => '💰 Pembayaran Midtrans Sukses!',
+                            'pesan'       => 'Atlet ' . $atlet->nama_lengkap . ' telah berhasil membayar ' . $tagihan->jenis_tagihan . ' dengan Midtrans LUNAS.',
+                            'kategori'    => 'tagihan',
+                            'is_read'     => false,
+                        ]);
+                    }
+
+                    // 2. Kirim ke HP Atlet Sendiri (Info Konfirmasi Sukses di Aplikasi Mobile)
+                    \App\Models\Notifikasi::create([
+                        'user_id'     => $atlet->user_id,
+                        'sender_id'   => null, // Otomatis dari sistem
+                        'target_role' => 'atlet',
+                        'judul'       => '✅ Pembayaran Berhasil!',
+                        'pesan'       => 'Terima kasih, pembayaran ' . $tagihan->jenis_tagihan . ' Anda sebesar Rp ' . number_format($tagihan->nominal) . ' telah lunas diverifikasi.',
+                        'kategori'    => 'tagihan',
+                        'is_read'     => false,
+                    ]);
+                }
                 
             } elseif ($request->transaction_status == 'expire' || $request->transaction_status == 'cancel' || $request->transaction_status == 'deny') {
+
+
                 // GAGAL: Update database
                 $tagihan->update(['status' => 'Gagal']); // Atau kembalikan ke 'Belum Lunas'
             }

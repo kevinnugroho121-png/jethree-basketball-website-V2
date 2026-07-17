@@ -31,6 +31,9 @@
                             <tr class="bg-green-600 text-white">
                                 <th class="px-3 py-3 text-center font-semibold w-10">No</th>
                                 <th class="px-4 py-3 font-semibold w-40">Tanggal & Waktu</th>
+                                <th class="px-4 py-3 font-semibold w-40">Pengirim</th>
+                                
+                                {{-- 💡 TAMBAHAN BARU: Header Pengirim --}}
                                 <th class="px-4 py-3 font-semibold w-44">Penerima</th>
                                 <th class="px-4 py-3 font-semibold min-w-[250px]">Judul & Isi Pesan</th>
                                 <th class="px-3 py-3 font-semibold text-center w-32">Status</th>
@@ -49,11 +52,39 @@
                                         {{ $notif->created_at->format('d/m/Y H:i') }}
                                     </td>
 
+                                    
+
+                                    {{-- 💡 TAMBAHAN BARU: Kolom Data Pengirim Notifikasi --}}
                                     <td class="px-4 py-2">
-                                        <div class="font-semibold text-gray-900">{{ $notif->user->name ?? 'User Terhapus' }}</div>
-                                        <div class="text-[10px] text-blue-600 font-semibold uppercase mt-0.5">
-                                            Role: {{ $notif->user->role ?? '-' }}
-                                        </div>
+                                        @if($notif->sender)
+                                            <div class="font-semibold text-gray-900">{{ $notif->sender->name }}</div>
+                                            <div class="text-[10px] text-emerald-600 font-bold uppercase mt-0.5">
+                                                Role: {{ $notif->sender->role }}
+                                            </div>
+                                        @else
+                                            {{-- Fallback jika notifikasi otomatis dari sistem (seperti tagihan baru) --}}
+                                            <div class="font-semibold text-gray-400 italic">Sistem Auto</div>
+                                            <div class="text-[10px] text-gray-400 font-bold uppercase mt-0.5">
+                                                Role: System
+                                            </div>
+                                        @endif
+                                    </td>
+
+                                    <td class="px-4 py-2">
+                                        {{-- 💡 PERBAIKAN: Jika user_id bernilai null, tampilkan sebagai Global Broadcast --}}
+                                        @if(is_null($notif->user_id))
+                                            <div class="font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded text-xs inline-block">
+                                                Semua User
+                                            </div>
+                                            <div class="text-[10px] text-gray-500 font-bold uppercase mt-1">
+                                                Role: Semua Role
+                                            </div>
+                                        @else
+                                            <div class="font-semibold text-gray-900">{{ $notif->user->name ?? 'User Terhapus' }}</div>
+                                            <div class="text-[10px] text-blue-600 font-semibold uppercase mt-0.5">
+                                                Role: {{ $notif->user->role ?? '-' }}
+                                            </div>
+                                        @endif
                                     </td>
 
                                     <td class="px-4 py-2">

@@ -48,22 +48,28 @@
                 {{-- B. PEMBATAS --}}
                 <div class="h-6 w-px bg-gray-200"></div>
 
-                {{-- C. LONCENG NOTIFIKASI (LOGIKA 24 JAM) --}}
+                {{-- C. LONCENG NOTIFIKASI (LOGIKA 24 JAM - MENDUKUNG BROADCAST GLOBAL) --}}
                 @php
-                    // 1. Hitung Badge Merah (HANYA notif yang benar-benar belum dibaca)
-                    $notifCount = \App\Models\Notifikasi::where('user_id', Auth::id())
-                                        ->where('is_read', false)
-                                        ->count();
+                    // 1. Hitung Badge Merah (Milik Sendiri ATAU Pengumuman Umum yang belum dibaca)
+                    $notifCount = \App\Models\Notifikasi::where(function($query) {
+                                                            $query->where('user_id', Auth::id())
+                                                                  ->orWhereNull('user_id');
+                                                        })
+                                                        ->where('is_read', false)
+                                                        ->count();
 
-                    // 2. Ambil List Dropdown (Notif 24 Jam Terakhir ATAU yang belum dibaca)
-                    $listNotifs = \App\Models\Notifikasi::where('user_id', Auth::id())
-                        ->where(function($query) {
-                            $query->where('created_at', '>=', \Carbon\Carbon::now()->subHours(24))
-                                  ->orWhere('is_read', false);
-                        })
-                        ->orderBy('created_at', 'desc')
-                        ->take(10) // Maksimal 10 biar nggak kepanjangan
-                        ->get();
+                    // 2. Ambil List Dropdown (Milik Sendiri ATAU Pengumuman Umum dalam 24 Jam Terakhir)
+                    $listNotifs = \App\Models\Notifikasi::where(function($query) {
+                                                            $query->where('user_id', Auth::id())
+                                                                  ->orWhereNull('user_id');
+                                                        })
+                                                        ->where(function($query) {
+                                                            $query->where('created_at', '>=', \Carbon\Carbon::now()->subHours(24))
+                                                                  ->orWhere('is_read', false);
+                                                        })
+                                                        ->orderBy('created_at', 'desc')
+                                                        ->take(10) // Maksimal 10 biar nggak kepanjangan
+                                                        ->get();
 
                     // Logika Route Tombol "Lihat Semua" Berdasarkan Role
                     $notifRoute = '#';

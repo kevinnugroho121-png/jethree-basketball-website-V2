@@ -38,7 +38,7 @@
                             <p class="text-xs text-gray-500 mt-1">*Pastikan tidak memilih tanggal masa lalu.</p>
                         </div>
 
-                        {{-- 2. KATEGORI & GENDER (Pilihan Wajib Admin) --}}
+                        {{-- 2. KATEGORI & PELATIH --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             {{-- Kategori --}}
                             <div>
@@ -54,14 +54,16 @@
                                 </select>
                             </div>
 
-                            {{-- Gender Latihan (⚡ Menggantikan Dropdown Pelatih Lama) --}}
+                            {{-- Pelatih --}}
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Gender Latihan</label>
-                                <select name="gender" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
-                                    <option value="">-- Pilih Gender --</option>
-                                    <option value="Putra" {{ old('gender') == 'Putra' ? 'selected' : '' }}>Putra</option>
-                                    <option value="Putri" {{ old('gender') == 'Putri' ? 'selected' : '' }}>Putri</option>
-                                    <option value="Campuran" {{ old('gender') == 'Campuran' ? 'selected' : '' }}>Campuran</option>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Pelatih Bertugas</label>
+                                <select name="pelatih_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                                    <option value="">-- Pilih Coach --</option>
+                                    @foreach($pelatihs as $pelatih)
+                                        <option value="{{ $pelatih->id }}" {{ old('pelatih_id') == $pelatih->id ? 'selected' : '' }}>
+                                            Coach {{ $pelatih->nama_lengkap }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -83,41 +85,14 @@
                             </div>
                         </div>
 
-                        {{-- SCRIPT AJAX UNTUK MATERI OTOMATIS --}}
-                        <script>
-                            document.getElementById('kategori_select').addEventListener('change', function() {
-                                let kategori = this.value;
-                                let materiSelect = document.getElementById('materi_select');
-
-                                // Kosongkan dan beri pesan loading
-                                materiSelect.innerHTML = '<option value="">⏳ Sedang memuat materi...</option>';
-
-                                if (kategori) {
-                                    // Tarik data dari server (Gudang Silabus) secara diam-diam
-                                    fetch(`{{ url('admin/master-materi/get-by-kategori') }}?kategori=${kategori}`)
-                                        .then(response => response.json())
-                                        .then(data => {
-                                            materiSelect.innerHTML = '<option value="">-- Pilih Materi Dari Silabus --</option>';
-                                            
-                                            if(data.length > 0) {
-                                                data.forEach(materi => {
-                                                    // Teks yang akan disimpan ke database (Contoh: "Pertemuan 1 - Ball Handling")
-                                                    let optionText = `Pertemuan ${materi.pertemuan_ke} - ${materi.judul_materi}`;
-                                                    materiSelect.innerHTML += `<option value="${optionText}">${optionText}</option>`;
-                                                });
-                                            } else {
-                                                materiSelect.innerHTML = '<option value="">❌ Silabus belum dibuat untuk kategori ini</option>';
-                                            }
-                                        })
-                                        .catch(error => {
-                                            console.error('Error:', error);
-                                            materiSelect.innerHTML = '<option value="">⚠️ Gagal memuat data materi</option>';
-                                        });
-                                } else {
-                                    materiSelect.innerHTML = '<option value="">-- Pilih Kategori Umur Terlebih Dahulu --</option>';
-                                }
-                            });
-                        </script>
+                        {{-- 4. MATERI LATIHAN (OTOMATIS DARI SILABUS) --}}
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">📝 Materi Latihan (Sesuai Silabus)</label>
+                            <select name="materi" id="materi_select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                                <option value="">-- Pilih Kategori Umur Terlebih Dahulu --</option>
+                            </select>
+                            <p class="text-xs text-blue-600 font-medium mt-1">✨ Materi akan muncul otomatis dan berurutan sesuai settingan di Master Materi.</p>
+                        </div>
 
                         {{-- 5. LOKASI & STATUS --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -156,17 +131,15 @@
     {{-- SCRIPT FLATPICKR --}}
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
-        // Setup Datepicker (⚡ BARU: Mengaktifkan pemilihan banyak tanggal sekaligus)
+        // Setup Datepicker
         flatpickr(".datepicker", {
-            mode: "multiple",    // ⚡ KUNCI: Biar bisa diklik banyak tanggal
-            conjunction: ", ",   // Pembatas antar tanggal berupa koma
-            dateFormat: "Y-m-d", 
-            altInput: true,      
-            altFormat: "d M Y",  // Format diperringkas karena menampung banyak tanggal
-            minDate: "today",    
-            defaultDate: "{{ request()->get('date') }}", 
+            dateFormat: "Y-m-d", // Format masuk database: 2026-01-10
+            altInput: true,      // Tampilan ke user
+            altFormat: "l, d F Y", // Contoh: Senin, 10 Januari 2026
+            minDate: "today",    // Mencegah pilih tanggal masa lalu
+            defaultDate: "{{ request()->get('date') }}", // Auto-fill dari URL jika ada
             locale: {
-                firstDayOfWeek: 1 
+                firstDayOfWeek: 1 // Mulai hari Senin
             }
         });
 

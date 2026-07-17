@@ -21,12 +21,23 @@ class Pelatih extends Model
         'lisensi',       // <--- WAJIB ADA (Biar data lisensi tersimpan)
         'alamat',        // <--- WAJIB ADA (Biar data alamat tersimpan)
         'status',
-        'foto_profil', 
+        'foto_profil',
+        'kategori_fokus', // ⚡ BARU: Izinkan simpan kategori ke database
+        'gender_fokus', 
     ];
 
     // Relasi ke User (Supaya bisa ambil Email login)
     public function user()
     {
         return $this->belongsTo(\App\Models\User::class, 'user_id');
+    }
+
+    // =========================================================================
+    // [BARU] RELASI KE TABEL JEMBATAN KATEGORI (Untuk Pembatasan Akses Absensi KU)
+    // =========================================================================
+    public function kategoris()
+    {
+        // Menghubungkan Model Pelatih ke data Kategori yang diampunya
+        return $this->hasMany(\App\Models\PelatihKategori::class, 'pelatih_id');
     }
 }

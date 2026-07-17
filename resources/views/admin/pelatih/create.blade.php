@@ -83,6 +83,30 @@
                             <textarea name="alamat" rows="2" class="form-textarea rounded-md shadow-sm mt-1 block w-full border-gray-300" placeholder="Masukkan alamat domisili saat ini...">{{ old('alamat') }}</textarea>
                         </div>
 
+                        {{-- ⚡ BARU: DROPDOWN KATEGORI & GENDER FOKUS PELATIH --}}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block font-medium text-sm text-gray-700">Kategori Umur Latihan <span class="text-red-500">*</span></label>
+                                <select name="kategori_fokus" class="form-select rounded-md shadow-sm mt-1 block w-full border-gray-300" required>
+                                    <option value="" disabled selected>-- Pilih Kategori Umur --</option>
+                                    <option value="KU-10" {{ old('kategori_fokus') == 'KU-10' ? 'selected' : '' }}>KU-10</option>
+                                    <option value="KU-12" {{ old('kategori_fokus') == 'KU-12' ? 'selected' : '' }}>KU-12</option>
+                                    <option value="KU-14" {{ old('kategori_fokus') == 'KU-14' ? 'selected' : '' }}>KU-14</option>
+                                    <option value="KU-16" {{ old('kategori_fokus') == 'KU-16' ? 'selected' : '' }}>KU-16</option>
+                                    <option value="Umum" {{ old('kategori_fokus') == 'Umum' ? 'selected' : '' }}>Umum / Semuanya</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-medium text-sm text-gray-700">Gender Fokus Latihan <span class="text-red-500">*</span></label>
+                                <select name="gender_fokus" class="form-select rounded-md shadow-sm mt-1 block w-full border-gray-300" required>
+                                    <option value="" disabled selected>-- Pilih Fokus Gender --</option>
+                                    <option value="Putra" {{ old('gender_fokus') == 'Putra' ? 'selected' : '' }}>Putra</option>
+                                    <option value="Putri" {{ old('gender_fokus') == 'Putri' ? 'selected' : '' }}>Putri</option>
+                                    <option value="Campuran" {{ old('gender_fokus') == 'Campuran' ? 'selected' : '' }}>Campuran (Putra & Putri)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         {{-- Foto & Status (DENGAN PREVIEW) --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>

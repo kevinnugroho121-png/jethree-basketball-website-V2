@@ -30,10 +30,35 @@
 
             {{-- FORM PENILAIAN --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+
+
+
                 <form action="{{ route('absensi.store', $jadwal->id) }}" method="POST" class="p-6">
-                    @csrf
-                    
-                    <div class="overflow-x-auto">
+                @csrf
+
+                {{-- REVISI POIN 13: INPUT DESKRIPSI MATERI HARIAN & TOMBOL SAKTI MASSAL --}}
+                <div class="mb-6 flex flex-col gap-4">
+                    <div>
+                        <label for="deskripsi_latihan" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                            📝 Ringkasan Menu / Deskripsi Latihan Hari Ini <span class="text-red-500">*Wajib</span>
+                        </label>
+                        <textarea id="deskripsi_latihan" name="deskripsi_latihan" rows="2" required
+                            class="w-full text-sm rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            placeholder="Contoh: Drill transisi defense to offense, evaluasi stamina, dan materi core strength..."></textarea>
+                    </div>
+
+                    <div class="flex justify-start">
+                        <button type="button" onclick="setSemuaHadirUtuh()" 
+                            class="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-sm flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                            </svg>
+                            SET SEMUA ATLET HADIR (STANDBY LOKAL)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
                         <table class="min-w-full border border-gray-200">
                             {{-- JUDUL KOLOM --}}
                             <thead class="bg-gray-800 text-white">
@@ -126,20 +151,39 @@
                         </table>
                     </div>
 
-                    {{-- TOMBOL AKSI --}}
-                    <div class="mt-6 flex justify-end gap-3">
-                        <a href="{{ route('jadwal.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 font-bold text-sm transition">
+
+
+                    {{-- TOMBOL AKSI UNIFORM DESIGN --}}
+                    <div class="mt-6 flex justify-end items-center gap-3 border-t border-gray-100 pt-4">
+                        <a href="{{ route('jadwal.index') }}" 
+                            class="h-10 px-5 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-xs uppercase tracking-wider transition">
                             Batal
                         </a>
-                        
+
                         @if($atlets->count() > 0)
-                            <button type="submit" class="px-6 py-2 bg-indigo-700 text-white rounded-md hover:bg-indigo-800 font-bold text-sm shadow-lg transition transform hover:scale-105">
+                            <button type="submit" 
+                                class="h-10 px-6 inline-flex items-center justify-center bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg font-bold text-xs uppercase tracking-wider shadow-md transition">
                                 💾 SIMPAN PENILAIAN & ABSENSI
                             </button>
                         @endif
                     </div>
+
+
+
                 </form>
             </div>
         </div>
     </div>
+
+    {{-- JAVASCRIPT LOGIKA SAKTI MASSAL STANDBY --}}
+    <script>
+        function setSemuaHadirUtuh() {
+            // Cari seluruh elemen select yang memiliki nama berawalan absensi
+            const dropdowns = document.querySelectorAll('select[name^="absensi"]');
+            dropdowns.forEach(select => {
+                select.value = 'Hadir'; // Set standby ke opsi Hadir sesuai nilai value option kamu
+            });
+            alert('Seluruh status kehadiran atlet berhasil dialihkan ke Hadir (Standby) 🟢');
+        }
+    </script>
 </x-app-layout>

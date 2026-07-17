@@ -124,7 +124,8 @@
                             </div>
                         @endif
                         
-                        <div class="h-full w-full relative z-20" style="{{ empty($donut_data) ? 'opacity: 0.2;' : '' }}">
+                        {{-- ✔️ KODE YANG BENAR (Lebih clean pakai class Tailwind) --}}
+                        <div class="h-full w-full relative z-20 {{ empty($donut_data) ? 'opacity-20' : '' }}">
                             <canvas id="statusChart"></canvas>
                         </div>
                     </div>
@@ -134,6 +135,22 @@
                     </div>
                 </div>
             </div>
+
+            {{-- ==================== SUNTIKAN BARU: GRAFIK KEHADIRAN COACH (POIN 50) ==================== --}}
+            <div class="bg-white p-6 rounded-2xl shadow-lg flex flex-col justify-between">
+                <div class="border-b border-gray-100 pb-4 mb-4">
+                    <h4 class="font-bold text-gray-700 text-lg flex items-center gap-2">
+                        📊 Tren Keaktifan Mengajar Pelatih (Presensi Bulanan)
+                    </h4>
+                </div>
+                <div class="h-64 w-full">
+                    <canvas id="coachAttendanceChart"></canvas>
+                </div>
+                <div class="mt-4 text-center text-xs font-semibold text-gray-400">
+                    Menampilkan total akumulasi frekuensi kehadiran seluruh coach Jethree per bulan
+                </div>
+            </div>
+            {{-- ========================================================================================= --}}
 
             {{-- 4. RIWAYAT TRANSAKSI TERAKHIR --}}
             <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -153,7 +170,8 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse($riwayat_terbaru as $item)
-                                <tr class="transition" style="hover:background-color: #F8FAFC;">
+                                {{-- ✔️ KODE YANG BENAR (Pindahkan hover ke class Tailwind) --}}
+                                <tr class="transition hover:bg-[#F8FAFC]">
                                     <td class="px-6 py-4 font-bold text-gray-800">
                                         {{ $item->atlet->user->name ?? $item->atlet->nama_lengkap ?? 'Atlet (Terhapus)' }}
                                     </td>
@@ -194,10 +212,10 @@
         new Chart(ctxIncome, {
             type: 'line',
             data: {
-                labels: @json($bulan_label),
+                labels: JSON.parse('{!! json_encode($bulan_label) !!}'),
                 datasets: [{
                     label: 'Pemasukan',
-                    data: @json($income_data),
+                    data: JSON.parse('{!! json_encode($income_data) !!}'),
                     borderColor: '#10B981', 
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
                     borderWidth: 3,
@@ -249,8 +267,8 @@
         });
 
         // 2. CHART DISTRIBUSI KATEGORI ATLET (DOUGHNUT CHART)
-        let donutLabels = @json($donut_labels);
-        let donutDataArr = @json($donut_data);
+        let donutLabels = JSON.parse('{!! json_encode($donut_labels) !!}');
+        let donutDataArr = JSON.parse('{!! json_encode($donut_data) !!}');
         
         // Palet warna yang akan me-loop menyesuaikan jumlah KU
         const palette = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#EF4444'];
@@ -293,6 +311,45 @@
                                 return ' ' + context.label + ': ' + context.parsed + ' Atlet';
                             }
                         }
+                    }
+                }
+            }
+        });
+
+        // ==================== SUNTIKAN SCRIPT BARU: BAR CHART COACH ATTENDANCE (POIN 50) ====================
+        const ctxCoach = document.getElementById('coachAttendanceChart').getContext('2d');
+        new Chart(ctxCoach, {
+            type: 'bar', 
+            data: {
+                labels: JSON.parse('{!! json_encode($bulan_label) !!}'),
+                datasets: [{
+                    label: 'Total Kehadiran Sesi',
+                    data: JSON.parse('{!! json_encode($coach_attendance_data) !!}'),
+
+
+                    backgroundColor: '#F59E0B', // Aksen Jingga Premium khas bola basket Jethree
+                    borderRadius: 8, // Bikin ujung batang agak tumpul/rounded modern
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { borderDash: [4, 4], color: '#f1f5f9' },
+                        ticks: {
+                            color: '#94a3b8',
+                            stepSize: 5 // Lompatan angka per baris presensi
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
                     }
                 }
             }
