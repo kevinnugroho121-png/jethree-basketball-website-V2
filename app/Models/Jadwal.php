@@ -18,7 +18,14 @@ class Jadwal extends Model
         'jam_selesai',
         'lokasi',
         'status',       // Tambahan status (Aktif/Dibatalkan)
-        'materi',       // <--- [PENTING] INI YANG DITAMBAHKAN AGAR BISA DISIMPAN
+        'materi',       
+        
+        // 💡 TAMBAHKAN BARIS DI BAWAH INI:
+        'status_rilis',
+        'link_youtube',
+        'review_latihan',
+        'is_takeover',
+        'pelatih_asli_id',
     ];
 
     // Memberitahu Laravel bahwa kolom ini adalah format Tanggal

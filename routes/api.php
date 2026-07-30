@@ -57,9 +57,13 @@ Route::middleware('auth:sanctum')->group(function () {
         return $next($request);
     }]], function () {
 
+        // 🟢 SUNTIKAN BARU: Jalur untuk dropdown daftar nama pelatih aktif bagi Owner
+        Route::get('/pelatih', [ApiPelatihController::class, 'listPelatih']); 
 
         Route::get('/pelatih/profile', [ApiPelatihController::class, 'profile']);
         Route::get('/pelatih/dashboard', [ApiPelatihController::class, 'dashboard']);
+        // 🟢 BARU: Jalur API untuk menarik data lonceng notifikasi personal Coach (Remind Absen & Takeover)
+        Route::get('/pelatih/notifications', [ApiPelatihController::class, 'notifications']);
         Route::get('/pelatih/jadwal', [ApiPelatihController::class, 'listJadwal']);
         Route::get('/pelatih/jadwal/{id}/atlet', [ApiPelatihController::class, 'getAtletByJadwal']);
         Route::get('/pelatih/kalender-full', [ApiPelatihController::class, 'kalenderJadwal']);
@@ -67,6 +71,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // 💡 SINKRONISASI MOBILE: Daftarkan rute penampung kiriman broadcast dari HP Owner & Admin
         Route::post('/owner/broadcast', [ApiNotifikasiController::class, 'broadcast']);
+        
+        // 💡 FITUR HISTORI TAKEOVER: Menyediakan data riwayat ambil alih untuk Owner di Flutter
+        Route::get('/owner/histori-takeover', [ApiPelatihController::class, 'historiTakeover']);
+
+        // ⚡ WORKFLOW V2: Rute untuk pelatih mengisi materi dan merilis jadwal kosongan dari Admin
+        Route::post('/pelatih/jadwal/{id}/rilis', [ApiPelatihController::class, 'releaseJadwal']);
     });
 
     // ===================================================
@@ -82,6 +92,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/atlet/dashboard', [ApiAtletController::class, 'dashboard']); 
         Route::get('/atlet/profile', [ApiAtletController::class, 'profile']); 
         Route::get('/atlet/rapor', [ApiAtletController::class, 'rapor']);
+        // 🟢 BARU: Jalur API untuk menarik data lonceng notifikasi dinamis (SPP & Sesi SKS)
+        Route::get('/atlet/notifications', [ApiAtletController::class, 'notifications']);
         
 
         // Jadwal Latihan (Agar menu kalender di HP Orang Tua jalan)

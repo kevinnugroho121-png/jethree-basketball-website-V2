@@ -44,8 +44,13 @@ class JadwalController extends Controller
             $kategoriAtlet = $atlet->kategori; 
             
             if ($kategoriAtlet) {
-                $query->where('kategori', $kategoriAtlet);
+                // 💡 FIX: Ambil kata pertama saja (Misal "KU-12 Putra" diambil "KU-12") agar cocok dengan nama kategori di tabel jadwals
+                $baseKategori = explode(' ', $kategoriAtlet)[0];
+                $query->where('kategori', 'LIKE', '%' . $baseKategori . '%');
             }
+
+            // ⚡ WORKFLOW BARU: Atlet HANYA boleh melihat jadwal yang sudah di-RILIS pelatih
+            $query->where('status_rilis', 'Rilis');
         }
 
         // --- ATURAN BARU: FILTER ROLE PELATIH VS ROLE BYPASS (OWNER/ADMIN) ---
@@ -56,13 +61,21 @@ class JadwalController extends Controller
         // Jika $user->role adalah 'owner' atau 'admin' (Coach Irul), 
         // baris di atas akan dilewati (Bypass), sehingga semua jadwal otomatis lolos tampil semua.
 
-        // Sihir Urutan: Jadwal Hari Ini paling atas, diikuti jadwal masa depan, lalu riwayat masa lalu
+        // 💡 FIX KALENDER: Jika Flutter mengirimkan parameter tanggal hasil klik kalender, filter datanya di sini
+        if ($request->filled('tanggal')) {
+            $query->whereDate('tanggal', $request->query('tanggal'));
+        } elseif ($request->filled('date')) {
+            $query->whereDate('tanggal', $request->query('date'));
+        }
+
+        // 💡 FIX PAGINASI: Hari ini teratas, lalu tanggal masa depan TERDEKAT (asc), lalu riwayat masa lalu terdekat (asc)
         $query->selectRaw("jadwals.*, IF(DATE(tanggal) = '$today', 1, 0) as is_today")
-
-
             ->orderByRaw("IF(DATE(tanggal) = '$today', 1, 0) DESC")
-            ->orderByRaw("CASE WHEN DATE(tanggal) > '$today' THEN 1 ELSE 2 END")
-            ->orderBy('tanggal', 'desc');
+            ->orderByRaw("CASE WHEN DATE(tanggal) > '$today' THEN 1 WHEN DATE(tanggal) < '$today' THEN 2 ELSE 3 END ASC")
+            ->orderByRaw("CASE 
+                WHEN DATE(tanggal) > '$today' THEN DATEDIFF(tanggal, '$today') 
+                ELSE DATEDIFF('$today', tanggal) 
+              END ASC");
 
         // Jika minta semua, pakai get(). Jika tidak, pakai paginate(2)
         $jadwals = $isAll ? $query->get() : $query->paginate(2);
@@ -73,21 +86,33 @@ class JadwalController extends Controller
         $mapFunction = function($item) use ($atlet) {
             
             $pelatihName = 'Tim Pelatih';
-            $idDiTabelJadwal = $item->pelatih_id ?? $item->user_id;
 
-            if ($idDiTabelJadwal) {
-                $dataPelatih = DB::table('pelatihs')->where('id', $idDiTabelJadwal)->first();
+            if ($item->is_takeover) {
+                // 🟢 PERBAIKAN DINAMIS: Cari tahu pelatih pengganti yang hadir mengajar hari itu di lapangan
+                $sampelAbsen = DB::table('absensis')->where('jadwal_id', $item->id)->first();
+                if ($sampelAbsen && $sampelAbsen->pelatih_hadir_id) {
+                    $pInfo = DB::table('pelatihs')->where('id', $sampelAbsen->pelatih_hadir_id)->first();
+                    $pelatihName = $pInfo ? ($pInfo->nama_lengkap ?? 'Owner Jethree') : 'Owner Jethree';
+                } else {
+                    $pelatihName = 'Owner Jethree'; // Fallback aman jika Owner mengajar sendiri
+                }
+            } else {
+                $idDiTabelJadwal = $item->pelatih_id ?? $item->user_id;
 
-                if ($dataPelatih) {
-                    $userAsli = User::find($dataPelatih->user_id);
-                    if ($userAsli) {
-                        $pelatihName = $userAsli->name; 
-                    }
-                } 
-                else {
-                    $userLangsung = User::find($idDiTabelJadwal);
-                    if ($userLangsung) {
-                        $pelatihName = $userLangsung->name;
+                if ($idDiTabelJadwal) {
+                    $dataPelatih = DB::table('pelatihs')->where('id', $idDiTabelJadwal)->first();
+
+                    if ($dataPelatih) {
+                        $userAsli = User::find($dataPelatih->user_id);
+                        if ($userAsli) {
+                            $pelatihName = $userAsli->name; 
+                        }
+                    } 
+                    else {
+                        $userLangsung = User::find($idDiTabelJadwal);
+                        if ($userLangsung) {
+                            $pelatihName = $userLangsung->name;
+                        }
                     }
                 }
             }
@@ -124,7 +149,8 @@ class JadwalController extends Controller
             return [
                 'id'          => $item->id,
                 'hari'        => $item->hari,
-                'tanggal'     => $item->tanggal,
+                // 💡 FIX TIMEZONE: Paksa Carbon mengembalikan teks tanggal bersih (YYYY-MM-DD) agar tidak diubah ke UTC oleh Laravel
+                'tanggal'     => Carbon::parse($item->tanggal)->toDateString(),
                 'jam_mulai'   => $item->jam_mulai,
                 'jam_selesai' => $item->jam_selesai,
                 'kategori'    => $item->kategori,
@@ -132,6 +158,12 @@ class JadwalController extends Controller
                 'pelatih'     => $pelatihName, 
                 'materi'      => $item->materi ?? 'Latihan Fisik & Teknik', 
                 'status_absen' => $statusAbsen, 
+                
+                // ⚡ REVISI POIN 3, 4 & 7: Sertakan data ringkasan latihan & video untuk atlet
+                'link_youtube'   => $item->link_youtube,
+                'review_latihan' => $item->review_latihan,
+                'is_takeover'    => (bool) $item->is_takeover,
+
                 // --- TAMBAHAN DATA UNTUK FLUTTER PELATIH ---
                 'is_today'      => $item->is_today,
                 'total_anak'    => $item->total_anak ?? 0,
