@@ -101,7 +101,11 @@ class ApiPelatihController extends Controller
             $queryHariIni = Jadwal::where('pelatih_id', $pelatih->id)->where('tanggal', $todayDate);
             
             if (!empty($kategoriDiampu)) {
-                $queryHariIni->whereIn('kategori', $kategoriDiampu);
+                $queryHariIni->where(function($q) use ($kategoriDiampu) {
+                    foreach ($kategoriDiampu as $kat) {
+                        $q->orWhere('kategori', 'LIKE', '%' . $kat . '%');
+                    }
+                });
             }
             
             $jadwal_hari_ini = $queryHariIni->first();
@@ -109,7 +113,11 @@ class ApiPelatihController extends Controller
             if (!$jadwal_hari_ini) {
                  $namaHari = Carbon::now()->isoFormat('dddd');
                  $jadwal_hari_ini = Jadwal::where('pelatih_id', $pelatih->id)
-                                           ->whereIn('kategori', $kategoriDiampu)
+                                           ->where(function($q) use ($kategoriDiampu) {
+                                               foreach ($kategoriDiampu as $kat) {
+                                                   $q->orWhere('kategori', 'LIKE', '%' . $kat . '%');
+                                               }
+                                           })
                                            ->where('hari', $namaHari)
                                            ->first();
             }
@@ -163,7 +171,11 @@ class ApiPelatihController extends Controller
             // SMART FALLBACK: Jika admin sudah memetakan kategori, filter secara ketat. 
             // Jika belum (data lama/belum disetting), loloskan filter whereIn agar tidak blank.
             if (!empty($kategoriDiampu)) {
-                $query->whereIn('kategori', $kategoriDiampu);
+                $query->where(function($q) use ($kategoriDiampu) {
+                    foreach ($kategoriDiampu as $kat) {
+                        $q->orWhere('kategori', 'LIKE', '%' . $kat . '%');
+                    }
+                });
             }
         }
 
@@ -245,7 +257,9 @@ class ApiPelatihController extends Controller
                 // 💡 FIX TIMEZONE: Paksa Carbon mengembalikan teks tanggal bersih (YYYY-MM-DD) agar tidak diubah ke UTC oleh Laravel
                 'tanggal' => Carbon::parse($j->tanggal)->toDateString(), 
                 'tanggal_indo' => Carbon::parse($j->tanggal)->isoFormat('D MMMM Y'),
-                'kategori' => $j->kategori . $genderSuffix, // 💡 FIX: Otomatis menghasilkan "KU-10 Putra" / "KU-12 Putri"
+                'kategori' => (str_contains($j->kategori, 'Putra') || str_contains($j->kategori, 'Putri') || str_contains($j->kategori, 'Campuran')) 
+                                ? $j->kategori 
+                                : trim($j->kategori . $genderSuffix),
                 'jam' => substr($j->jam_mulai, 0, 5) . ' - ' . substr($j->jam_selesai, 0, 5),
                 'jam_mulai' => $j->jam_mulai ? substr($j->jam_mulai, 0, 5) : null,
                 'jam_selesai' => $j->jam_selesai ? substr($j->jam_selesai, 0, 5) : null,
@@ -289,9 +303,11 @@ class ApiPelatihController extends Controller
         // Agar pelatih bisa absen untuk jadwal kemarin/besok
         $tanggalJadwal = $jadwal->tanggal; 
 
-        // 💡 FIX KATEGORI: Menggunakan LIKE agar kategori "KU-12" di jadwal bisa mencocokkan data "KU-12 Putra" atau "KU-12 Putri" di tabel atlet
-        $atlets = Atlet::where('kategori', 'LIKE', '%' . $jadwal->kategori . '%') 
-                        ->where('status', 'Aktif') 
+        // 🟢 PERBAIKAN: Ambil kata pertama saja (misal "KU-12 Putra" diambil "KU-12") agar cocok dengan data tabel atlets
+        $kategoriDasar = explode(' ', $jadwal->kategori)[0];
+
+        $atlets = Atlet::where('kategori', 'LIKE', '%' . $kategoriDasar . '%') 
+                        ->where('status', 'Aktif')
                         ->orderBy('nama_lengkap', 'asc')
                         ->get()
                         ->map(function($atlet) use ($jadwal_id, $tanggalJadwal) {
@@ -375,26 +391,9 @@ class ApiPelatihController extends Controller
                 'status'         => 'Selesai'
             ];
 
-            // ⚡ LOGIKA ANTI-CURANG TAKEOVER OWNER: Jika Owner yang melakukan absen di lapangan, kunci statusnya
             $userLog = $request->user();
-            if ($userLog->role === 'owner' && !$jadwal->is_takeover) {
-                $updateJadwalData['is_takeover'] = true;
-                $updateJadwalData['pelatih_asli_id'] = $jadwal->pelatih_id; 
 
-                DB::table('histori_takeovers')->insert([
-                    'jadwal_id'        => $jadwal->id,
-                    'owner_id'         => $userLog->id,
-                    'pelatih_id'       => $jadwal->pelatih_id,
-                    'tanggal_takeover' => \Carbon\Carbon::now('Asia/Jakarta')->toDateString(),
-                    'created_at'       => \Carbon\Carbon::now('Asia/Jakarta'),
-                    'updated_at'       => \Carbon\Carbon::now('Asia/Jakarta'),
-                ]);
-            }
-
-            $jadwal->update($updateJadwalData);
-            $tanggalAbsen = $jadwal->tanggal;
-
-            // --- DETEKSI DINAMIS SIAPA YANG MELATIH DI LAPANGAN ---
+            // 🟢 1. DETEKSI DULU SIAPA PELATIH YANG HADIR MENGAJAR DI LAPANGAN
             $pelatihHadirId = null;
             if ($request->has('pelatih_id') && $request->pelatih_id != null) {
                 $pelatihHadirId = $request->pelatih_id;
@@ -402,6 +401,24 @@ class ApiPelatihController extends Controller
                 $pelatihAsli = Pelatih::where('user_id', $userLog->id)->first();
                 $pelatihHadirId = $pelatihAsli ? $pelatihAsli->id : null;
             }
+
+            // 🟢 2. CEK TAKEOVER HANYA JIKA PELATIH HADIR BERBEDA DENGAN PELATIH UTAMA JADWAL
+            if ($pelatihHadirId && $pelatihHadirId != $jadwal->pelatih_id && !$jadwal->is_takeover) {
+                $updateJadwalData['is_takeover'] = true;
+                $updateJadwalData['pelatih_asli_id'] = $jadwal->pelatih_id; 
+
+                DB::table('histori_takeovers')->insert([
+                    'jadwal_id'        => $jadwal->id,
+                    'owner_id'         => $userLog->id,
+                    'pelatih_id'       => $jadwal->pelatih_id,
+                    'tanggal_takeover' => $jadwal->tanggal,
+                    'created_at'       => \Carbon\Carbon::now('Asia/Jakarta'),
+                    'updated_at'       => \Carbon\Carbon::now('Asia/Jakarta'),
+                ]);
+            }
+
+            $jadwal->update($updateJadwalData);
+            $tanggalAbsen = $jadwal->tanggal;
 
             // Normalisasi data agar format kiriman eceran maupun massal dapat dibaca satu pintu loop
             $atletsToProcess = [];
@@ -508,13 +525,42 @@ class ApiPelatihController extends Controller
                 ->join('users', 'histori_takeovers.owner_id', '=', 'users.id')
                 ->select([
                     'histori_takeovers.id',
+                    'histori_takeovers.jadwal_id',
+                    'jadwals.tanggal as tanggal_jadwal', // 🟢 AMBIL TANGGAL JADWAL LATIHAN ASLI
                     'histori_takeovers.tanggal_takeover',
                     'jadwals.kategori as kategori_kelas',
+                    'pelatihs.gender_fokus',
                     'pelatihs.nama_lengkap as coach_asli',
-                    'users.name as coach_baru'
+                    'users.name as owner_name'
                 ])
                 ->orderBy('histori_takeovers.id', 'desc')
-                ->get();
+                ->get()
+                ->map(function($item) {
+                    $kategori = $item->kategori_kelas ?? '';
+                    $gender = !empty($item->gender_fokus) ? ' ' . $item->gender_fokus : '';
+                    
+                    if (!str_contains($kategori, 'Putra') && !str_contains($kategori, 'Putri') && !str_contains($kategori, 'Campuran')) {
+                        $kategori = trim($kategori . $gender);
+                    }
+
+                    // 🟢 CEK SIAPA PELATIH PENGGANTI ASLI YANG DITUNJUK MENGAJAR DI LAPANGAN
+                    $coachBaruName = $item->owner_name; // Fallback ke nama Owner
+                    $sampelAbsen = DB::table('absensis')->where('jadwal_id', $item->jadwal_id)->first();
+                    if ($sampelAbsen && $sampelAbsen->pelatih_hadir_id) {
+                        $pBaru = DB::table('pelatihs')->where('id', $sampelAbsen->pelatih_hadir_id)->first();
+                        if ($pBaru) {
+                            $coachBaruName = $pBaru->nama_lengkap; // Mengambil nama coach pengganti (seperti Coach Anisya Ririn)
+                        }
+                    }
+
+                    return [
+                        'id'               => $item->id,
+                        'tanggal_takeover' => $item->tanggal_jadwal ?? $item->tanggal_takeover, // 🟢 GUNAKAN TANGGAL JADWAL LATIHAN
+                        'kategori_kelas'   => $kategori,
+                        'coach_asli'       => $item->coach_asli,
+                        'coach_baru'       => $coachBaruName, // 🟢 AKAN TAMPIL SINKRON DENGAN FLUTTER ATLET
+                    ];
+                });
 
             return response()->json([
                 'success' => true,

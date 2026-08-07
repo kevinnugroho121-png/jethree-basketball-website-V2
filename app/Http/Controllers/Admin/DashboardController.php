@@ -13,8 +13,16 @@ use Illuminate\Support\Facades\DB; // [PENTING] Untuk fungsi grafik
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        // 🟢 SUNTIKAN BARU: Alat bantu tangkap filter waktu & pelatih dinamis untuk grafik keaktifan
+        $periode = $request->input('periode', date('Y-m'));
+        $filter_tahun = substr($periode, 0, 4);
+        $filter_bulan = substr($periode, 5, 2);
+        
+        $selected_pelatih = $request->input('pelatih_id');
+        $list_pelatih = DB::table('pelatihs')->select('id', 'nama_lengkap')->get();
+
         // 1. Statistik Utama 
         $totalAtlet = Atlet::where('status', 'Aktif')->count(); 
         $totalPelatih = Pelatih::where('status', 'Aktif')->count();
@@ -106,6 +114,33 @@ class DashboardController extends Controller
                              ->take(5) // Ambil 5 saja buat preview
                              ->get();
 
+        // 🟢 SUNTIKAN BARU: Logika data grafik & tabel kontribusi mengajar pelatih khusus untuk Admin Web
+        $coach_attendance_data = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $query_grafik = DB::table('absensis')
+                ->whereYear('tanggal_latihan', $filter_tahun)
+                ->whereMonth('tanggal_latihan', $m);
+
+            if ($selected_pelatih) {
+                $query_grafik->join('jadwals', 'absensis.jadwal_id', '=', 'jadwals.id')
+                             ->where('jadwals.pelatih_id', $selected_pelatih);
+            }
+                
+            $coach_attendance_data[] = $query_grafik->count(DB::raw('DISTINCT absensis.jadwal_id'));
+        }
+
+        $coach_breakdown = DB::table('absensis')
+            ->join('jadwals', 'absensis.jadwal_id', '=', 'jadwals.id')
+            ->join('pelatihs', 'jadwals.pelatih_id', '=', 'pelatihs.id')
+            ->select('pelatihs.nama_lengkap', DB::raw('COUNT(DISTINCT absensis.jadwal_id) as total_mengajar'))
+            ->whereYear('absensis.tanggal_latihan', $filter_tahun)
+            ->whereMonth('absensis.tanggal_latihan', $filter_bulan)
+            ->when($selected_pelatih, function($q) use ($selected_pelatih) {
+                return $q->where('jadwals.pelatih_id', $selected_pelatih);
+            })
+            ->groupBy('pelatihs.id', 'pelatihs.nama_lengkap')
+            ->get();
+
         // Kirim ke View (Termasuk variabel baru)
         return view('admin.dashboard', compact(
             'totalAtlet', 
@@ -119,8 +154,14 @@ class DashboardController extends Controller
             'incomeLabels', 
             'incomeValues',
             'upcomingSchedules',
-            'atletKurangAktif', // <--- Variabel Baru
-            'atletTelatMateri'  // <--- Variabel Baru
+            'atletKurangAktif', 
+            'atletTelatMateri',  
+            'periode',               // 🟢 SUNTIKAN BARU
+            'filter_tahun',          // 🟢 SUNTIKAN BARU
+            'filter_bulan',          // 🟢 SUNTIKAN BARU
+            'coach_attendance_data', // 🟢 SUNTIKAN BARU
+            'coach_breakdown',       // 🟢 SUNTIKAN BARU
+            'list_pelatih'           // 🟢 SUNTIKAN BARU
         ));
     }
 }

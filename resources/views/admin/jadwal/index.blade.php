@@ -43,14 +43,33 @@
                 <div class="px-4 py-3 border-b border-gray-100 bg-gray-50">
                     <form method="GET" action="{{ route('jadwal.index') }}" class="flex flex-wrap items-center gap-2">
 
+                        {{-- Kategori Umur dengan Pembeda Gender --}}
                         <select name="kategori" class="h-9 text-sm border border-gray-300 rounded-lg px-3 bg-white shadow-sm focus:border-green-500 focus:ring-green-500 cursor-pointer">
-                            <option value="">- Semua Kategori -</option>
-                            <option value="Semua Umur" {{ request('kategori') == 'Semua Umur' ? 'selected' : '' }}>Semua Umur</option>
-                            <option value="KU-10" {{ request('kategori') == 'KU-10' ? 'selected' : '' }}>KU-10</option>
-                            <option value="KU-12" {{ request('kategori') == 'KU-12' ? 'selected' : '' }}>KU-12</option>
-                            <option value="KU-14" {{ request('kategori') == 'KU-14' ? 'selected' : '' }}>KU-14</option>
-                            <option value="KU-16" {{ request('kategori') == 'KU-16' ? 'selected' : '' }}>KU-16</option>
-                            <option value="KU-18" {{ request('kategori') == 'KU-18' ? 'selected' : '' }}>KU-18</option>
+                            <option value="">Semua Kategori</option>
+                            <optgroup label="🏀 KATEGORI PUTRA">
+                                <option value="KU-10 Putra" {{ request('kategori') == 'KU-10 Putra' ? 'selected' : '' }}>KU-10 Putra</option>
+                                <option value="KU-12 Putra" {{ request('kategori') == 'KU-12 Putra' ? 'selected' : '' }}>KU-12 Putra</option>
+                                <option value="KU-14 Putra" {{ request('kategori') == 'KU-14 Putra' ? 'selected' : '' }}>KU-14 Putra</option>
+                                <option value="KU-16 Putra" {{ request('kategori') == 'KU-16 Putra' ? 'selected' : '' }}>KU-16 Putra</option>
+                                <option value="KU-18 Putra" {{ request('kategori') == 'KU-18 Putra' ? 'selected' : '' }}>KU-18 Putra</option>
+                            </optgroup>
+                            <optgroup label="🎀 KATEGORI PUTRI">
+                                <option value="KU-10 Putri" {{ request('kategori') == 'KU-10 Putri' ? 'selected' : '' }}>KU-10 Putri</option>
+                                <option value="KU-12 Putri" {{ request('kategori') == 'KU-12 Putri' ? 'selected' : '' }}>KU-12 Putri</option>
+                                <option value="KU-14 Putri" {{ request('kategori') == 'KU-14 Putri' ? 'selected' : '' }}>KU-14 Putri</option>
+                                <option value="KU-16 Putri" {{ request('kategori') == 'KU-16 Putri' ? 'selected' : '' }}>KU-16 Putri</option>
+                                <option value="KU-18 Putri" {{ request('kategori') == 'KU-18 Putri' ? 'selected' : '' }}>KU-18 Putri</option>
+                            </optgroup>
+                        </select>
+
+                        {{-- SUNTIKAN BARU: Filter Berdasarkan Nama Pelatih (Coach) --}}
+                        <select name="pelatih_id" class="h-9 text-sm border border-gray-300 rounded-lg px-3 bg-white shadow-sm focus:border-green-500 focus:ring-green-500 cursor-pointer">
+                            <option value="">Semua Pelatih</option>
+                            @foreach(\App\Models\Pelatih::where('status', 'Aktif')->select('id', 'nama_lengkap')->get() as $p)
+                                <option value="{{ $p->id }}" {{ request('pelatih_id') == $p->id ? 'selected' : '' }}>
+                                    Coach {{ $p->nama_lengkap }}
+                                </option>
+                            @endforeach
                         </select>
 
                         <div class="flex items-center gap-1 bg-white border border-gray-300 rounded-lg px-3 h-9 shadow-sm">
@@ -88,13 +107,24 @@
                         <tbody class="divide-y divide-gray-100">
                             @forelse($jadwals as $index => $jadwal)
                                 @php
-                                    $warnaKU = match($jadwal->kategori) {
-                                        'KU-10' => ['bg' => 'bg-red-100', 'text' => 'text-red-700'],
-                                        'KU-12' => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
-                                        'KU-14' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-700'],
-                                        'KU-16' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-700'],
-                                        'KU-18' => ['bg' => 'bg-sky-100', 'text' => 'text-sky-700'],
-                                        default  => ['bg' => 'bg-gray-100', 'text' => 'text-gray-700'],
+                                    // 🟢 PERBAIKAN: Amankan deteksi umur polos sekaligus siapkan pencetakan gender jika tersedia di model jadwal
+                                    $warnaKU = match (true) {
+                                        str_contains($jadwal->kategori, 'KU-10') && (str_contains($jadwal->gender ?? '', 'Putri') || str_contains($jadwal->kategori, 'Putri')) => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-700'],
+                                        str_contains($jadwal->kategori, 'KU-10') => ['bg' => 'bg-red-100', 'text' => 'text-red-700'],
+                                        
+                                        str_contains($jadwal->kategori, 'KU-12') && (str_contains($jadwal->gender ?? '', 'Putri') || str_contains($jadwal->kategori, 'Putri')) => ['bg' => 'bg-purple-100', 'text' => 'text-purple-700'],
+                                        str_contains($jadwal->kategori, 'KU-12') => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
+                                        
+                                        str_contains($jadwal->kategori, 'KU-14') && (str_contains($jadwal->gender ?? '', 'Putri') || str_contains($jadwal->kategori, 'Putri')) => ['bg' => 'bg-red-100', 'text' => 'text-red-700'],
+                                        str_contains($jadwal->kategori, 'KU-14') => ['bg' => 'bg-blue-100', 'text' => 'text-blue-700'],
+                                        
+                                        str_contains($jadwal->kategori, 'KU-16') && (str_contains($jadwal->gender ?? '', 'Putri') || str_contains($jadwal->kategori, 'Putri')) => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
+                                        str_contains($jadwal->kategori, 'KU-16') => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-700'],
+                                        
+                                        str_contains($jadwal->kategori, 'KU-18') && (str_contains($jadwal->gender ?? '', 'Putri') || str_contains($jadwal->kategori, 'Putri')) => ['bg' => 'bg-blue-100', 'text' => 'text-blue-700'],
+                                        str_contains($jadwal->kategori, 'KU-18') => ['bg' => 'bg-purple-100', 'text' => 'text-purple-700'],
+                                        
+                                        default => ['bg' => 'bg-gray-100', 'text' => 'text-gray-700'],
                                     };
                                 @endphp
                                 <tr class="hover:bg-green-50 transition-colors duration-150 {{ $loop->even ? 'bg-gray-50' : 'bg-white' }}">
@@ -117,8 +147,9 @@
                                     </td>
 
                                     <td class="px-4 py-2 text-center">
-                                        <span class="inline-block {{ $warnaKU['bg'] }} {{ $warnaKU['text'] }} text-xs font-bold px-2 py-1 rounded uppercase">
-                                            {{ $jadwal->kategori }}
+                                        {{-- 🟢 PERBAIKAN: Cetak nama kategori sekaligus panggil keterangan gender pelengkap di sampingnya --}}
+                                        <span class="inline-block {{ $warnaKU['bg'] }} {{ $warnaKU['text'] }} text-xs font-bold px-2 py-1 rounded uppercase whitespace-nowrap">
+                                            {{ $jadwal->kategori }} {{ $jadwal->gender ?? '' }}
                                         </span>
                                     </td>
 

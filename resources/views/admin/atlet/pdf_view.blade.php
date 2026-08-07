@@ -103,7 +103,7 @@
                 <td width="50%">
                     Mengetahui,<br>Orang Tua / Wali
                     <div class="sign-space"></div>
-                    ( ..................................... )
+                    ( ............................ )
                 </td>
                 <td width="50%">
                     Kediri, {{ date('d F Y') }}<br>Atlet

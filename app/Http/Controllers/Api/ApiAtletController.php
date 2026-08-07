@@ -137,7 +137,8 @@ class ApiAtletController extends Controller
                 'alamat'       => $atlet->alamat ?? '-',
                 // 💡 PERBAIKAN: Langsung tembak ke kolom 'kategori' agar sinkron penuh dengan DB
                 'kategori'     => $atlet->kategori ?? '-', 
-                'sekolah'      => $atlet->sekolah ?? $atlet->nama_sekolah ?? '-',
+                'jenjang'      => $atlet->jenjang_sekolah ?? '',
+                'sekolah'      => trim(($atlet->jenjang_sekolah ?? '') . ' ' . ($atlet->nama_sekolah ?? '-')),
                 'posisi'       => $atlet->posisi ?? '-',
                 
                 // DATA ORTU (Sesuai Screenshot Database: nama_orang_tua)

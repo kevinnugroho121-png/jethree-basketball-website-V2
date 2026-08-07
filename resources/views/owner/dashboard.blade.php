@@ -138,16 +138,64 @@
 
             {{-- ==================== SUNTIKAN BARU: GRAFIK KEHADIRAN COACH (POIN 50) ==================== --}}
             <div class="bg-white p-6 rounded-2xl shadow-lg flex flex-col justify-between">
-                <div class="border-b border-gray-100 pb-4 mb-4">
+                {{-- 🟢 PERBAIKAN: Ubah menjadi flex-row agar judul dan dropdown berdampingan rapi --}}
+                <div class="border-b border-gray-100 pb-4 mb-4 flex flex-row justify-between items-center gap-4">
                     <h4 class="font-bold text-gray-700 text-lg flex items-center gap-2">
                         📊 Tren Keaktifan Mengajar Pelatih (Presensi Bulanan)
                     </h4>
+
+                    {{-- 🟢 FITUR BARU: Dropdown Filter Nama Pelatih Dinamis --}}
+                    <form action="{{ url()->current() }}" method="GET" class="flex items-center">
+                        {{-- Mengunci filter periode bulan biar tidak ke-reset saat ganti nama pelatih --}}
+                        <input type="hidden" name="periode" value="{{ $periode }}">
+                        
+                        <select name="pelatih_id" onchange="this.form.submit()" 
+                                class="text-xs border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-green-500 focus:border-green-500 text-gray-600 bg-white cursor-pointer font-semibold shadow-sm">
+                            <option value="">🌍 Semua Pelatih & Takeover</option>
+                            @foreach($list_pelatih as $p)
+                                <option value="{{ $p->id }}" {{ request('pelatih_id') == $p->id ? 'selected' : '' }}>
+                                    🏀 {{ $p->nama_lengkap }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </form>
                 </div>
                 <div class="h-64 w-full">
                     <canvas id="coachAttendanceChart"></canvas>
                 </div>
                 <div class="mt-4 text-center text-xs font-semibold text-gray-400">
                     Menampilkan total akumulasi frekuensi kehadiran seluruh coach Jethree per bulan
+                </div>
+
+                {{-- 🟢 SUNTIKAN BARU: TABEL LIST BREAKDOWN MENGAJAR PER PELATIH --}}
+                <div class="mt-6 border-t border-gray-100 pt-5">
+                    <h5 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                        📋 Rincian Kontribusi Pelatih (Bulan & Tahun Terfilter)
+                    </h5>
+                    <div class="overflow-x-auto rounded-xl border border-gray-100">
+                        <table class="w-full text-left text-xs text-gray-600">
+                            <thead class="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider">
+                                <tr>
+                                    <th class="px-4 py-3">Nama Pelatih</th>
+                                    <th class="px-4 py-3 text-center">Sesi Terlaksana</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 bg-white">
+                                @forelse($coach_breakdown as $cb)
+                                    <tr class="hover:bg-gray-50 transition">
+                                        <td class="px-4 py-3 font-semibold text-gray-800">{{ $cb->nama_lengkap }}</td>
+                                        <td class="px-4 py-3 text-center font-extrabold text-amber-600">{{ $cb->total_mengajar }} Sesi</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="2" class="px-4 py-6 text-center text-gray-400 italic">
+                                            Tidak ada aktivitas mengajar pelatih yang selesai pada periode ini.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             {{-- ========================================================================================= --}}

@@ -118,6 +118,75 @@
                 </div>
             </div>
 
+            {{-- 🟢 SUNTIKAN BARU: GRAFIK KEAKTIFAN & BREAKDOWN PELATIH (KHUSUS ADMIN) --}}
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
+                {{-- Header + Multi Filter Form --}}
+                <div class="border-b border-gray-100 pb-4 mb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h6 class="font-bold text-base text-gray-950">📊 Tren Keaktifan Mengajar Pelatih</h6>
+                        <p class="text-xs text-gray-400 font-medium mt-0.5">Berdasarkan akumulasi presensi sesi latihan yang telah terlaksana</p>
+                    </div>
+                    
+                    {{-- Form Multi-Filter Dinamis --}}
+                    <form action="{{ url()->current() }}" method="GET" class="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+                        {{-- Filter Bulan & Tahun --}}
+                        <input type="month" name="periode" value="{{ $periode }}" onchange="this.form.submit()"
+                               class="text-xs border border-gray-300 rounded-lg px-2.5 py-1.5 focus:ring-emerald-500 focus:border-emerald-500 text-gray-600 bg-white cursor-pointer font-semibold shadow-sm">
+                        
+                        {{-- Filter Opsi Nama Pelatih --}}
+                        <select name="pelatih_id" onchange="this.form.submit()" 
+                                class="text-xs border border-gray-300 rounded-lg px-2.5 py-1.5 focus:ring-emerald-500 focus:border-emerald-500 text-gray-600 bg-white cursor-pointer font-semibold shadow-sm">
+                            <option value="">🌍 Semua Pelatih & Takeover</option>
+                            @foreach($list_pelatih as $p)
+                                <option value="{{ $p->id }}" {{ request('pelatih_id') == $p->id ? 'selected' : '' }}>
+                                    🏀 {{ $p->nama_lengkap }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        @if(request()->has('periode') || request()->has('pelatih_id'))
+                            <a href="{{ url()->current() }}" class="bg-red-50 text-red-600 border border-red-100 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-100 transition">
+                                Reset
+                            </a>
+                        @endif
+                    </form>
+                </div>
+
+                {{-- Canvas Chart Batang --}}
+                <div class="relative h-64 w-full mb-6">
+                    <canvas id="coachAttendanceChart"></canvas>
+                </div>
+
+                {{-- Tabel Rincian Kontribusi di Bawah Grafik --}}
+                <div class="border-t border-gray-100 pt-4">
+                    <span class="text-xs font-bold text-gray-400 tracking-wider uppercase block mb-3">📋 Rincian Kontribusi Pelatih (Periode Terfilter)</span>
+                    <div class="overflow-x-auto rounded-xl border border-gray-100">
+                        <table class="min-w-full text-sm text-left text-gray-600">
+                            <thead class="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider text-xs">
+                                <tr>
+                                    <th class="px-6 py-3">Nama Pelatih</th>
+                                    <th class="px-6 py-3 text-center">Sesi Terlaksana</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 bg-white">
+                                @forelse($coach_breakdown as $cb)
+                                    <tr class="hover:bg-gray-50/50 transition">
+                                        <td class="px-6 py-3 font-semibold text-gray-800">{{ $cb->nama_lengkap }}</td>
+                                        <td class="px-6 py-3 text-center font-bold text-emerald-600">{{ $cb->total_mengajar }} Sesi</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="2" class="px-6 py-6 text-center text-gray-400 italic">
+                                            Tidak ada aktivitas mengajar pelatih yang selesai pada periode ini.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             {{-- BARIS 4: TABEL JADWAL (Gaya Premium Modern ala Apex) --}}
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="p-6 pb-4 border-b border-gray-50 flex justify-between items-center">
@@ -174,7 +243,7 @@
                 labels: ['Laki-laki', 'Perempuan'],
                 datasets: [{
                     data: [{{ $cowok }}, {{ $cewek }}],
-                    backgroundColor: ['#0ea5e9', '#f43f5e'], // Sky Blue & Rose Modern
+                    backgroundColor: ['#0ea5e9', '#f43f5e'],
                     borderWidth: 0,
                     hoverOffset: 4
                 }]
@@ -183,9 +252,9 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false } // Kita sembunyikan karena sudah dibuat manual dengan HTML di atas
+                    legend: { display: false }
                 },
-                cutout: '75%' // Membuat lingkaran chart lebih tipis dan elegan ala Apex
+                cutout: '75%'
             }
         });
 
@@ -196,10 +265,10 @@
                 labels: {!! json_encode($kuLabels) !!},
                 datasets: [{
                     label: "Jumlah Atlet",
-                    backgroundColor: "#10b981", // Emerald 500
+                    backgroundColor: "#10b981",
                     hoverBackgroundColor: "#059669",
                     data: {!! json_encode($kuValues) !!},
-                    borderRadius: 6, // Batang grafik melengkung halus di ujungnya
+                    borderRadius: 6,
                     borderSkipped: false
                 }]
             },
@@ -208,11 +277,11 @@
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { grid: { display: false } }, // Menghapus garis grid vertikal agar bersih
+                    x: { grid: { display: false } },
                     y: { 
                         beginAtZero: true, 
                         ticks: { stepSize: 1, color: '#9ca3af' },
-                        grid: { color: '#f3f4f6' } // Garis grid horizontal tipis
+                        grid: { color: '#f3f4f6' }
                     }
                 }
             }
@@ -227,7 +296,7 @@
                     label: 'Pendapatan (Rp)',
                     data: {!! json_encode($incomeValues) !!},
                     borderColor: '#10b981', 
-                    backgroundColor: 'rgba(16, 185, 129, 0.04)', // Efek fill transparan sangat tipis
+                    backgroundColor: 'rgba(16, 185, 129, 0.04)',
                     borderWidth: 3,
                     pointBackgroundColor: '#10b981',
                     pointHoverRadius: 6,
@@ -247,6 +316,35 @@
                             color: '#9ca3af',
                             callback: function(value) { return 'Rp ' + value.toLocaleString('id-ID'); }
                         },
+                        grid: { color: '#f3f4f6' }
+                    }
+                }
+            }
+        });
+
+        // 4. CHART KEAKTIFAN COACH (BAR CHART APEX STYLE)
+        new Chart(document.getElementById('coachAttendanceChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'],
+                datasets: [{
+                    label: 'Total Kehadiran Sesi',
+                    backgroundColor: '#f59e0b',
+                    hoverBackgroundColor: '#d97706',
+                    data: {!! json_encode($coach_attendance_data) !!},
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { stepSize: 5, color: '#9ca3af' },
                         grid: { color: '#f3f4f6' }
                     }
                 }

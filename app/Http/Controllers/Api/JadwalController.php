@@ -146,6 +146,11 @@ class JadwalController extends Controller
                 }
             }
 
+            // 🟢 LOGIKA PENANGANAN GENDER: Gunakan kategori lengkap dari profil atlet ("KU-12 Putra")
+            $kategoriDisplay = ($atlet && !empty($atlet->kategori)) 
+                ? $atlet->kategori 
+                : trim(($item->kategori ?? '') . ' ' . ($item->gender ?? $item->jenis_kelamin ?? ''));
+
             return [
                 'id'          => $item->id,
                 'hari'        => $item->hari,
@@ -153,7 +158,7 @@ class JadwalController extends Controller
                 'tanggal'     => Carbon::parse($item->tanggal)->toDateString(),
                 'jam_mulai'   => $item->jam_mulai,
                 'jam_selesai' => $item->jam_selesai,
-                'kategori'    => $item->kategori,
+                'kategori'    => $kategoriDisplay,
                 'lokasi'      => $item->lokasi,
                 'pelatih'     => $pelatihName, 
                 'materi'      => $item->materi ?? 'Latihan Fisik & Teknik', 

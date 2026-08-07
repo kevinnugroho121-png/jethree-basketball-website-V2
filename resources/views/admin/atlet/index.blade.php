@@ -40,11 +40,20 @@
 
                         <select name="kategori" class="h-9 text-sm border border-gray-300 rounded-lg px-3 bg-white shadow-sm focus:border-green-500 focus:ring-green-500 cursor-pointer">
                             <option value="">- Kategori -</option>
-                            <option value="KU-10" {{ request('kategori') == 'KU-10' ? 'selected' : '' }}>KU-10</option>
-                            <option value="KU-12" {{ request('kategori') == 'KU-12' ? 'selected' : '' }}>KU-12</option>
-                            <option value="KU-14" {{ request('kategori') == 'KU-14' ? 'selected' : '' }}>KU-14</option>
-                            <option value="KU-16" {{ request('kategori') == 'KU-16' ? 'selected' : '' }}>KU-16</option>
-                            <option value="KU-18" {{ request('kategori') == 'KU-18' ? 'selected' : '' }}>KU-18</option>
+                            <optgroup label="🏀 KATEGORI PUTRA">
+                                <option value="KU-10 Putra" {{ request('kategori') == 'KU-10 Putra' ? 'selected' : '' }}>KU-10 Putra</option>
+                                <option value="KU-12 Putra" {{ request('kategori') == 'KU-12 Putra' ? 'selected' : '' }}>KU-12 Putra</option>
+                                <option value="KU-14 Putra" {{ request('kategori') == 'KU-14 Putra' ? 'selected' : '' }}>KU-14 Putra</option>
+                                <option value="KU-16 Putra" {{ request('kategori') == 'KU-16 Putra' ? 'selected' : '' }}>KU-16 Putra</option>
+                                <option value="KU-18 Putra" {{ request('kategori') == 'KU-18 Putra' ? 'selected' : '' }}>KU-18 Putra</option>
+                            </optgroup>
+                            <optgroup label="🎀 KATEGORI PUTRI">
+                                <option value="KU-10 Putri" {{ request('kategori') == 'KU-10 Putri' ? 'selected' : '' }}>KU-10 Putri</option>
+                                <option value="KU-12 Putri" {{ request('kategori') == 'KU-12 Putri' ? 'selected' : '' }}>KU-12 Putri</option>
+                                <option value="KU-14 Putri" {{ request('kategori') == 'KU-14 Putri' ? 'selected' : '' }}>KU-14 Putri</option>
+                                <option value="KU-16 Putri" {{ request('kategori') == 'KU-16 Putri' ? 'selected' : '' }}>KU-16 Putri</option>
+                                <option value="KU-18 Putri" {{ request('kategori') == 'KU-18 Putri' ? 'selected' : '' }}>KU-18 Putri</option>
+                            </optgroup>
                         </select>
 
                         <select name="status" class="h-9 text-sm border border-gray-300 rounded-lg px-3 bg-white shadow-sm focus:border-green-500 focus:ring-green-500 cursor-pointer">
@@ -84,13 +93,24 @@
                         <tbody class="divide-y divide-gray-100">
                             @forelse ($atlets as $index => $atlet)
                                 @php
-                                    $warnaKU = match($atlet->kategori) {
-                                        'KU-10' => ['bg' => 'bg-red-100', 'text' => 'text-red-700'],
-                                        'KU-12' => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
-                                        'KU-14' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-700'],
-                                        'KU-16' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-700'],
-                                        'KU-18' => ['bg' => 'bg-sky-100', 'text' => 'text-sky-700'],
-                                        default  => ['bg' => 'bg-gray-100', 'text' => 'text-gray-700'],
+                                    // 🟢 PERBAIKAN UTAMA: Amankan dengan kombinasi silang 5 warna yang PASTI AKTIF di sistem CSS proyekmu
+                                    $warnaKU = match (true) {
+                                        str_contains($atlet->kategori, 'KU-10') && str_contains($atlet->kategori, 'Putra') => ['bg' => 'bg-red-100', 'text' => 'text-red-700'],
+                                        str_contains($atlet->kategori, 'KU-10') && str_contains($atlet->kategori, 'Putri') => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-700'],
+                                        
+                                        str_contains($atlet->kategori, 'KU-12') && str_contains($atlet->kategori, 'Putra') => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
+                                        str_contains($atlet->kategori, 'KU-12') && str_contains($atlet->kategori, 'Putri') => ['bg' => 'bg-purple-100', 'text' => 'text-purple-700'],
+                                        
+                                        str_contains($atlet->kategori, 'KU-14') && str_contains($atlet->kategori, 'Putra') => ['bg' => 'bg-blue-100', 'text' => 'text-blue-700'],
+                                        str_contains($atlet->kategori, 'KU-14') && str_contains($atlet->kategori, 'Putri') => ['bg' => 'bg-red-100', 'text' => 'text-red-700'],
+                                        
+                                        str_contains($atlet->kategori, 'KU-16') && str_contains($atlet->kategori, 'Putra') => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-700'],
+                                        str_contains($atlet->kategori, 'KU-16') && str_contains($atlet->kategori, 'Putri') => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
+                                        
+                                        str_contains($atlet->kategori, 'KU-18') && str_contains($atlet->kategori, 'Putra') => ['bg' => 'bg-purple-100', 'text' => 'text-purple-700'],
+                                        str_contains($atlet->kategori, 'KU-18') && str_contains($atlet->kategori, 'Putri') => ['bg' => 'bg-blue-100', 'text' => 'text-blue-700'],
+                                        
+                                        default => ['bg' => 'bg-gray-100', 'text' => 'text-gray-700'],
                                     };
                                 @endphp
                                 <tr class="hover:bg-green-50 transition-colors duration-150 {{ $loop->even ? 'bg-gray-50' : 'bg-white' }}">
@@ -120,14 +140,18 @@
                                     </td>
 
                                     <td class="px-3 py-2 text-center">
-                                        <span class="inline-block {{ $warnaKU['bg'] }} {{ $warnaKU['text'] }} text-xs font-bold px-2 py-1 rounded">
+                                        {{-- 🟢 PERBAIKAN: Tambahkan whitespace-nowrap agar boks memanjang rapi kesamping --}}
+                                        <span class="inline-block {{ $warnaKU['bg'] }} {{ $warnaKU['text'] }} text-xs font-bold px-2 py-1 rounded whitespace-nowrap">
                                             {{ $atlet->kategori ?? '-' }}
                                         </span>
                                     </td>
 
-                                    <td class="px-4 py-2 text-gray-600 text-xs">
-                                        <span class="bg-gray-100 px-1 py-0.5 rounded border text-[10px] mr-1">{{ $atlet->jenjang_sekolah }}</span>
-                                        {{ $atlet->nama_sekolah ?? '-' }}
+                                    <td class="px-4 py-2 text-gray-600 text-xs whitespace-nowrap">
+                                        {{-- 🟢 PERBAIKAN: Pasang warna dinamis mengikuti kategori di kirinya dan perjelas teks nama sekolah --}}
+                                        <span class="{{ $warnaKU['bg'] }} {{ $warnaKU['text'] }} px-1.5 py-0.5 rounded font-semibold text-[10px] mr-1 uppercase">
+                                            {{ $atlet->jenjang_sekolah }}
+                                        </span>
+                                        <span class="text-gray-700 font-medium">{{ $atlet->nama_sekolah ?? '-' }}</span>
                                     </td>
 
                                     <td class="px-4 py-2 font-mono text-xs text-gray-700">

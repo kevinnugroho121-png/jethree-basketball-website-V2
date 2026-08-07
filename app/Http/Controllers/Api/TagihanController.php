@@ -26,12 +26,15 @@ class TagihanController extends Controller
             ], 404);
         }
 
-        // Ambil tagihan milik atlet ini saja
-        // PERUBAHAN: Ganti ->get() menjadi ->paginate(10)
+        // Ambil tagihan milik atlet ini saja dengan pengurutan kronologis global yang cerdas
         $tagihans = Tagihan::where('atlet_id', $atlet->id)
-                           ->orderBy('status', 'asc') // 'Belum Lunas' (B) < 'Lunas' (L)
-                           ->orderBy('id', 'desc')
-                           ->paginate(4); // Menampilkan maksimal 10 per halaman
+                           // 1. Kelompokkan 'Belum Lunas' & 'Menunggu Verifikasi' di atas (0), paksa 'Lunas' tenggelam di bawah (1)
+                           ->orderByRaw("CASE WHEN status = 'Lunas' THEN 1 ELSE 0 END ASC")
+                           // 2. Urutkan dari tahun terlama/tunggakan (2026) ke tahun terjauh (2027)
+                           ->orderBy('tahun', 'asc')
+                           // 3. Urutkan dari bulan terkecil (Januari) ke bulan terbesar (Desember)
+                           ->orderBy('bulan', 'asc')
+                           ->paginate(4);
 
         return response()->json([
             'success' => true,

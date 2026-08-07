@@ -145,11 +145,35 @@
                             </span>
                         </div>
 
-                        {{-- ⚡ BARU: DATA FOKUS KATEGORI & GENDER PADA DETAIL BIODATA --}}
+                        {{-- ⚡ BARU: DATA FOKUS KATEGORI & GENDER PADA DETAIL BIODATA (SINKRON 100%) --}}
+                        @if($pelatih->kategori_fokus || $pelatih->gender_fokus)
+                            @php
+                                // Mengunci keselarasan 5 warna utama aman terkompilasi agar sama dengan list utama
+                                $warnaDetailCoach = match (true) {
+                                    $pelatih->kategori_fokus == 'KU-10' && $pelatih->gender_fokus == 'Putra' => ['bg' => 'bg-red-100', 'text' => 'text-red-700', 'border' => 'border-red-200'],
+                                    $pelatih->kategori_fokus == 'KU-10' && $pelatih->gender_fokus == 'Putri' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-700', 'border' => 'border-yellow-200'],
+                                    
+                                    $pelatih->kategori_fokus == 'KU-12' && $pelatih->gender_fokus == 'Putra' => ['bg' => 'bg-green-100', 'text' => 'text-green-700', 'border' => 'border-green-200'],
+                                    $pelatih->kategori_fokus == 'KU-12' && $pelatih->gender_fokus == 'Putri' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-700', 'border' => 'border-purple-200'],
+                                    
+                                    $pelatih->kategori_fokus == 'KU-14' && $pelatih->gender_fokus == 'Putra' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-700', 'border' => 'border-blue-200'],
+                                    $pelatih->kategori_fokus == 'KU-14' && $pelatih->gender_fokus == 'Putri' => ['bg' => 'bg-red-100', 'text' => 'text-red-700', 'border' => 'border-red-200'],
+                                    
+                                    $pelatih->kategori_fokus == 'KU-16' && $pelatih->gender_fokus == 'Putra' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-700', 'border' => 'border-yellow-200'],
+                                    $pelatih->kategori_fokus == 'KU-16' && $pelatih->gender_fokus == 'Putri' => ['bg' => 'bg-green-100', 'text' => 'text-green-700', 'border' => 'border-green-200'],
+                                    
+                                    $pelatih->kategori_fokus == 'KU-18' && $pelatih->gender_fokus == 'Putra' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-700', 'border' => 'border-purple-200'],
+                                    $pelatih->kategori_fokus == 'KU-18' && $pelatih->gender_fokus == 'Putri' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-700', 'border' => 'border-blue-200'],
+                                    
+                                    default => ['bg' => 'bg-gray-100', 'text' => 'text-gray-700', 'border' => 'border-gray-200'],
+                                };
+                            @endphp
+                        @endif
+
                         <div class="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-4">
                             <span class="text-gray-500 text-sm font-medium">Kategori Umur Latihan</span>
                             <span class="sm:col-span-2 text-gray-900 font-semibold">
-                                <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs border border-blue-200 shadow-sm">
+                                <span class="px-2 py-1 rounded text-xs border shadow-sm whitespace-nowrap {{ $warnaDetailCoach['bg'] }} {{ $warnaDetailCoach['text'] }} {{ $warnaDetailCoach['border'] }}">
                                     {{ $pelatih->kategori_fokus ?? '-' }}
                                 </span>
                             </span>
@@ -158,7 +182,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-4">
                             <span class="text-gray-500 text-sm font-medium">Gender Fokus Latihan</span>
                             <span class="sm:col-span-2 text-gray-900 font-semibold">
-                                <span class="bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs border border-purple-200 shadow-sm">
+                                <span class="px-2 py-1 rounded text-xs border shadow-sm whitespace-nowrap {{ $warnaDetailCoach['bg'] }} {{ $warnaDetailCoach['text'] }} {{ $warnaDetailCoach['border'] }}">
                                     {{ $pelatih->gender_fokus ?? '-' }}
                                 </span>
                             </span>

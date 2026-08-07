@@ -104,19 +104,38 @@ class DashboardController extends Controller
         // ---------------------------------------------------------
         // 4b. DATA GRAFIK "TREN KEHADIRAN BULANAN COACH" (Poin 50)
         // ---------------------------------------------------------
+        // 🟢 SUNTIKAN BARU: Tangkap filter ID coach & sediakan master list pelatih untuk opsi dropdown web
+        $selected_pelatih = $request->input('pelatih_id');
+        $list_pelatih = DB::table('pelatihs')->select('id', 'nama_lengkap')->get();
+
         $coach_attendance_data = [];
         
         for ($m = 1; $m <= 12; $m++) {
-            // LOGIKA BARU: Menghitung berapa banyak sesi latihan unik (jadwal_id) 
-            // yang telah terlaksana di tabel 'absensis' menggunakan kolom 'tanggal_latihan'
-            $total_hadir_bulan_ini = DB::table('absensis')
+            $query_grafik = DB::table('absensis')
                 ->whereYear('tanggal_latihan', $filter_tahun)
-                ->whereMonth('tanggal_latihan', $m)
-                ->distinct('jadwal_id')
-                ->count('jadwal_id');
+                ->whereMonth('tanggal_latihan', $m);
+
+            // Jika Owner memfilter nama pelatih tertentu, join ke jadwals untuk penyaringan data
+            if ($selected_pelatih) {
+                $query_grafik->join('jadwals', 'absensis.jadwal_id', '=', 'jadwals.id')
+                             ->where('jadwals.pelatih_id', $selected_pelatih);
+            }
                 
-            $coach_attendance_data[] = $total_hadir_bulan_ini;
+            $coach_attendance_data[] = $query_grafik->count(DB::raw('DISTINCT absensis.jadwal_id'));
         }
+
+        // Kueri list breakdown di bawah grafik otomatis ikut menyaring data secara presisi
+        $coach_breakdown = DB::table('absensis')
+            ->join('jadwals', 'absensis.jadwal_id', '=', 'jadwals.id')
+            ->join('pelatihs', 'jadwals.pelatih_id', '=', 'pelatihs.id')
+            ->select('pelatihs.nama_lengkap', DB::raw('COUNT(DISTINCT absensis.jadwal_id) as total_mengajar'))
+            ->whereYear('absensis.tanggal_latihan', $filter_tahun)
+            ->whereMonth('absensis.tanggal_latihan', $filter_bulan)
+            ->when($selected_pelatih, function($q) use ($selected_pelatih) {
+                return $q->where('jadwals.pelatih_id', $selected_pelatih);
+            })
+            ->groupBy('pelatihs.id', 'pelatihs.nama_lengkap')
+            ->get();
 
         // ---------------------------------------------------------
         // 5. RIWAYAT TRANSAKSI TERBARU (Tabel Bawah)
@@ -146,6 +165,8 @@ class DashboardController extends Controller
             'donut_labels',         // Label kategori (KU-10, KU-12, dll)
             'donut_data',           // Angka total per kategori
             'coach_attendance_data', // [BARU] Suplai data grafik tren kehadiran coach (Poin 50)
+            'coach_breakdown',
+            'list_pelatih',         // 🟢 SUNTIKAN BARU: Daftarkan ini agar dibaca oleh form dropdown blade web
             'riwayat_terbaru'       // Wajib untuk Tabel Riwayat
         ));
     }

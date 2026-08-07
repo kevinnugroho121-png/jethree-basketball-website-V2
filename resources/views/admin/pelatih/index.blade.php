@@ -77,13 +77,35 @@
                                             Lahir: {{ \Carbon\Carbon::parse($pelatih->tanggal_lahir)->format('d-m-Y') }}
                                         </div>
                                         
-                                        {{-- ⚡ BARU: BADGE INDIKATOR FOKUS KELAS & GENDER COACH --}}
+                                        {{-- ⚡ BARU: BADGE INDIKATOR FOKUS KELAS & GENDER COACH (SINKRON WARNA ATLET) --}}
                                         @if($pelatih->kategori_fokus || $pelatih->gender_fokus)
+                                            @php
+                                                // 🟢 PERBAIKAN TOTAL: Menggunakan 5 warna utama terkompilasi agar KU-10 & KU-12 Putri tidak copot jadi hitam
+                                                $warnaCoach = match (true) {
+                                                    $pelatih->kategori_fokus == 'KU-10' && $pelatih->gender_fokus == 'Putra' => ['bg' => 'bg-red-100', 'text' => 'text-red-700'],
+                                                    $pelatih->kategori_fokus == 'KU-10' && $pelatih->gender_fokus == 'Putri' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-700'],
+                                                    
+                                                    $pelatih->kategori_fokus == 'KU-12' && $pelatih->gender_fokus == 'Putra' => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
+                                                    $pelatih->kategori_fokus == 'KU-12' && $pelatih->gender_fokus == 'Putri' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-700'],
+                                                    
+                                                    $pelatih->kategori_fokus == 'KU-14' && $pelatih->gender_fokus == 'Putra' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-700'],
+                                                    $pelatih->kategori_fokus == 'KU-14' && $pelatih->gender_fokus == 'Putri' => ['bg' => 'bg-red-100', 'text' => 'text-red-700'],
+                                                    
+                                                    $pelatih->kategori_fokus == 'KU-16' && $pelatih->gender_fokus == 'Putra' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-700'],
+                                                    $pelatih->kategori_fokus == 'KU-16' && $pelatih->gender_fokus == 'Putri' => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
+                                                    
+                                                    $pelatih->kategori_fokus == 'KU-18' && $pelatih->gender_fokus == 'Putra' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-700'],
+                                                    $pelatih->kategori_fokus == 'KU-18' && $pelatih->gender_fokus == 'Putri' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-700'],
+                                                    
+                                                    default => ['bg' => 'bg-gray-100', 'text' => 'text-gray-700'],
+                                                };
+                                            @endphp
+
                                             <div class="mt-1 flex flex-wrap gap-1">
-                                                <span class="px-2 py-0.5 text-[9px] font-bold rounded bg-blue-100 text-blue-800 shadow-sm">
+                                                <span class="px-2 py-0.5 text-[9px] font-bold rounded shadow-sm whitespace-nowrap {{ $warnaCoach['bg'] }} {{ $warnaCoach['text'] }}">
                                                     {{ $pelatih->kategori_fokus ?? '-' }}
                                                 </span>
-                                                <span class="px-2 py-0.5 text-[9px] font-bold rounded bg-purple-100 text-purple-800 shadow-sm">
+                                                <span class="px-2 py-0.5 text-[9px] font-bold rounded shadow-sm whitespace-nowrap {{ $warnaCoach['bg'] }} {{ $warnaCoach['text'] }}">
                                                     {{ $pelatih->gender_fokus ?? '-' }}
                                                 </span>
                                             </div>

@@ -206,7 +206,7 @@
                                 <div>
                                     <p>Mengetahui,<br>Orang Tua / Wali</p>
                                     <div class="h-20"></div> {{-- Spasi tanda tangan --}}
-                                    <p class="border-t border-gray-400 w-2/3 mx-auto pt-1">( ..................................... )</p>
+                                    <p class="border-t border-gray-400 w-2/3 mx-auto pt-1">( ............................... )</p>
                                 </div>
                                 <div>
                                     <p>Kediri, {{ date('d F Y') }}<br>Atlet Yang Bersangkutan</p>
