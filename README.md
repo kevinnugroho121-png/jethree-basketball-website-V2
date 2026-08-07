@@ -1,59 +1,43 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🏀 JeThree Basketball Academy - Core Backend & Web System
 
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <b style="font-size: 20px;">Sistem Informasi Manajemen Akademi Basket, Finansial, & RESTful API Central</b>
+  <br>
+  <i>Dikembangkan khusus untuk JeThree Basketball Academy</i>
 </p>
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 📌 Ringkasan Sistem
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+**JeThree Website & Backend API** adalah pusat kendali (*central hub*) untuk JeThree Basketball Academy. Berbasis framework Laravel, sistem ini menangani seluruh manajemen data utama, finansial akademi, operasional jadwal, pencatatan presensi, hingga penyediaan **RESTful API Endpoint** aman (dengan sistem token Sanitium/Bearer) yang dikonsumsi oleh aplikasi mobile (`jethree_mobile`).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🚀 Fitur Utama & Modul Backend
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 1. Management Information System (Web Admin)
+- **Dashboard Eksekutif (Owner & Admin):** Visualisasi statistik jumlah atlet aktif, pelatih, pendapatan bulanan, dan ringkasan kehadiran.
+- **Manajemen Atlet & Kelompok Umur (KU):** Pengelolaan basis data atlet lengkap dengan status keanggotaan dan pembagian kelompok umur (U-10, U-12, U-14, U-16, KU Putra/Putri).
+- **Manajemen Pelatih & Jadwal:** Penjadwalan latihan harian, penetapan pelatih utama, dan pengaturan alokasi lapangan.
+- **Modul Finansial & Pembayaran SPP:**
+  - Pencatatan tagihan SPP bulanan atlet.
+  - Integrasi pembayaran dengan verifikasi bukti transfer/QRIS.
+  - Rekapitulasi porsi honorarium mengajar pelatih berdasarkan kehadiran dan porsi *Takeover*.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 2. RESTful API Gateway (Mobile Integration)
+- **Authentication Services:** Endpoint Login, Logout, dan Pengelolaan Profil Pelatih/Owner/Atlet berbasis *Bearer Token*.
+- **Sync Absensi & Evaluasi:** Endpoint penyedia data jadwal harian, penyerapan input presensi massal, dan penyimpanan 4 komponen nilai kompetensi skill atlet (*Dribble, Passing, Shooting, IQ/Mental*).
+- **Automated Takeover Engine:** Algoritma pemrosesan pengalihan hak melatih harian, otomatisasi kalkulasi porsi honorarium, dan penguncian status *ter-takeover*.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🛠️ Tech Stack & Dependencies
 
-### Premium Partners
+- **Framework:** Laravel 11 (PHP ^8.1)
+- **Database:** MySQL / MariaDB
+- **Authentication:** Laravel Sanctum (Token-Based REST API)
+- **Asset Bundler:** Vite
+- **UI Components:** Blade Templates, Bootstrap / Tailwind CSS, FontAwesome / Tabler Icons
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
