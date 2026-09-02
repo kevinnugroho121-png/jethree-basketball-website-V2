@@ -125,11 +125,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 mb-1">Nama Lengkap (Sesuai Akta) <span class="text-red-500">*</span></label>
-                                <input type="text" name="name" value="{{ old('name') }}" required placeholder="Contoh: Kevin Nugroho" class="w-full h-11 rounded-lg border-gray-300 px-4 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition">
+                                <input type="text" name="name" value="{{ old('name') }}" required placeholder="Nama Lengkap Atlet" class="w-full h-11 rounded-lg border-gray-300 px-4 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 mb-1">Nama Panggilan</label>
-                                <input type="text" name="nama_panggilan" value="{{ old('nama_panggilan') }}" placeholder="Contoh: Kevin" class="w-full h-11 rounded-lg border-gray-300 px-4 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition">
+                                <input type="text" name="nama_panggilan" value="{{ old('nama_panggilan') }}" placeholder="Nama Panggilan Atlet" class="w-full h-11 rounded-lg border-gray-300 px-4 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 mb-1">Tempat Lahir <span class="text-red-500">*</span></label>
