@@ -217,3 +217,23 @@ Route::middleware(['auth'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// --- ROUTE SEMENTARA SYMLINK STORAGE ---
+Route::get('/jalankan-link', function () {
+    $publicStorage = public_path('storage');
+    $appPublic = storage_path('app/public');
+
+    // Amankan folder lama jika ada, lalu bersihkan link lama
+    if (is_dir($publicStorage) && !is_link($publicStorage)) {
+        \Illuminate\Support\Facades\File::copyDirectory($publicStorage, $appPublic);
+        \Illuminate\Support\Facades\File::deleteDirectory($publicStorage);
+    } elseif (is_link($publicStorage)) {
+        @unlink($publicStorage);
+    }
+
+    // Jalankan symlink storage
+    \Illuminate\Support\Facades\Artisan::call('storage:link');
+    $output = \Illuminate\Support\Facades\Artisan::output();
+
+    return '<h3>Hasil Eksekusi:</h3>' . nl2br($output) . '<br><p>Storage link berhasil terhubung! Silakan cek kembali data atlet.</p>';
+});
