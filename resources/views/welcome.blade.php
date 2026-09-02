@@ -63,7 +63,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
                 <a href="/" class="flex items-center gap-3 group">
-                    <img src="{{ asset('images/logo_j3.png') }}" alt="Logo Jethree" class="w-12 h-12 object-contain group-hover:scale-105 transition-transform" onerror="this.onerror=null; this.src='https://via.placeholder.com/100?text=J3';">
+                    <img src="{{ secure_asset('images/logo_j3.png') }}" alt="Logo Jethree" class="w-12 h-12 object-contain group-hover:scale-105 transition-transform">
                     <span class="font-montserrat font-extrabold text-xl tracking-tight text-jethree-navy uppercase">
                         Jethree <span class="text-jethree-600">Academy</span>
                     </span>
@@ -279,7 +279,7 @@
                 {{-- Kolom 1: Brand & About --}}
                 <div class="space-y-6">
                     <div class="flex items-center gap-3">
-                        <img src="{{ asset('images/logo_j3.png') }}" class="w-12 h-12 grayscale opacity-70" onerror="this.onerror=null; this.style.display='none';">
+                        <img src="{{ secure_asset('images/logo_j3.png') }}" alt="Logo Jethree" class="w-12 h-12 grayscale opacity-70">
                         <span class="font-montserrat font-black text-2xl text-white uppercase tracking-widest">Jethree <span class="text-jethree-600">Academy</span></span>
                     </div>
                     <p class="text-sm leading-relaxed font-medium">
