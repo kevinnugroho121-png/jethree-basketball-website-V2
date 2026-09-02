@@ -6,6 +6,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ config('app.name', 'Jethree App') }}</title>
+        <link rel="icon" type="image/png" href="{{ secure_asset('images/logo_j3.png') }}">
 
         {{-- FONT: Inter & Montserrat (Senada dengan Landing Page) --}}
         <link rel="preconnect" href="https://fonts.googleapis.com">
