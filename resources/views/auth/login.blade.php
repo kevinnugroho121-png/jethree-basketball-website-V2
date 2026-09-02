@@ -37,7 +37,7 @@
         body { 
             font-family: 'Inter', sans-serif; 
             /* BACKGROUND FOTO LAPANGAN BASKET */
-            background-image: url('{{ asset('images/ibl.jpg') }}');
+            background-image: url('{{ secure_asset('images/ibl.jpg') }}');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -72,7 +72,7 @@
         
         {{-- HEADER KARTU --}}
         <div class="flex flex-col items-center mb-8 text-center">
-            <img src="{{ asset('images/logo_j3.png') }}" alt="Logo Jethree" class="h-20 w-auto object-contain mb-5 drop-shadow-md" onerror="this.onerror=null; this.src='https://via.placeholder.com/100?text=J3';">
+    <img src="{{ secure_asset('images/logo_j3.png') }}" alt="Logo Jethree" class="w-24 h-24 md:w-28 md:h-28 object-contain mb-4 drop-shadow-md">
             <h1 class="font-montserrat text-2xl font-black text-jethree-navy tracking-tight uppercase">
                 Jethree <span class="text-jethree-600">Academy</span>
             </h1>
