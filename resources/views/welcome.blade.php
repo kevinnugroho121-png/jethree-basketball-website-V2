@@ -240,8 +240,18 @@
                     <p class="text-gray-400 text-lg mb-10 leading-relaxed font-medium">
                         Kami menyediakan aplikasi khusus untuk Orang Tua dan Pelatih. Pantau jadwal, bayar SPP, dan lihat perkembangan anak dalam satu genggaman layar pintar.
                     </p>
-                    <div class="flex justify-center md:justify-start gap-4">
-                        
+                    <div class="flex flex-col sm:flex-row items-center md:items-start gap-3">
+                        <a href="{{ asset('downloads/jethree.apk') }}" 
+                           download="jethree-academy.apk" 
+                           class="btn-glow inline-flex items-center gap-3 px-6 py-3.5 bg-jethree-600 hover:bg-jethree-700 text-white font-montserrat font-bold rounded-xl border border-jethree-500 shadow-lg hover:-translate-y-0.5 transition-all text-sm uppercase tracking-wide">
+                            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+                            </svg>
+                            <span>Download APK (v1.0.0)</span>
+                        </a>
+                        <span class="text-xs text-slate-400 mt-1 self-center md:self-auto">
+                            
+                        </span>
                     </div>
                 </div>
                 
@@ -249,24 +259,11 @@
                 <div class="md:w-1/2 flex justify-center reveal" style="transition-delay: 200ms;">
                     <div class="relative w-[280px] h-[550px] bg-gray-900 rounded-[3rem] border-[10px] border-gray-800 shadow-2xl overflow-hidden transform md:rotate-2 hover:rotate-0 transition duration-500">
                         <div class="absolute top-0 inset-x-0 h-6 bg-gray-800 rounded-b-xl w-32 mx-auto z-20"></div>
-                        <div class="w-full h-full bg-slate-50 flex flex-col pt-12 px-6">
-                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 text-center mb-4 hover:shadow-md transition">
-                                <div class="w-12 h-12 bg-jethree-50 text-jethree-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                                </div>
-                                <h4 class="font-montserrat font-bold text-jethree-navy">Rapor Digital</h4>
-                                <p class="text-[10px] text-gray-500 mt-2 leading-relaxed">Grafik perkembangan shooting & dribbling ananda Budi meningkat 20%.</p>
-                                <div class="mt-4 w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                    <div class="w-4/5 h-full bg-jethree-600 rounded-full"></div>
-                                </div>
-                            </div>
-                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 text-center opacity-70">
-                                <div class="w-12 h-12 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                                </div>
-                                <h4 class="font-montserrat font-bold text-jethree-navy">Notifikasi Latihan</h4>
-                                <div class="mt-3 w-3/4 mx-auto h-2 bg-gray-200 rounded-full"></div>
-                            </div>
+                        <div class="w-full h-full bg-white flex items-center justify-center overflow-hidden">
+                            <img src="{{ asset('images/mobile-screen.png') }}" 
+                                 alt="JeThree Mobile App" 
+                                 class="w-full h-full object-cover object-top"
+                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/280x550?text=JeThree+App';">
                         </div>
                     </div>
                 </div>
@@ -300,7 +297,7 @@
                         </li>
                         <li class="flex items-center gap-3">
                             <svg class="w-5 h-5 text-jethree-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                            <span>+62 815-1555-3401</span>
+                            <span>+62 856-0460-4406</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <svg class="w-5 h-5 text-jethree-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
@@ -316,7 +313,7 @@
                         <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-jethree-600 hover:text-white transition duration-300">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
                         </a>
-                        <a href="https://www.instagram.com/jethreebasketballacademy?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-jethree-600 hover:text-white transition duration-300">
+                        <a href="https://www.instagram.com/jethreebasketballacademy" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-jethree-600 hover:text-white transition duration-300">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                         </a>
                         <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-jethree-600 hover:text-white transition duration-300">

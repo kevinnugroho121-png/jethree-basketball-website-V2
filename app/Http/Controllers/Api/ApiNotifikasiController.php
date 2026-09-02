@@ -55,42 +55,50 @@ class ApiNotifikasiController extends Controller
             ], 404);
         }
 
+        // Pre-load data Atlet & Pelatih sekaligus sebelum looping (sekali tembak DB)
+        $atletsByUserId   = \App\Models\Atlet::all()->keyBy('user_id');
+        $pelatihsByUserId = \App\Models\Pelatih::all()->keyBy('user_id');
+
         $list_nomor_hp = [];
+        $dataBatchNotif = [];
         $now = now()->toDateTimeString();
 
-        // 3. LOOPING: Kirim notifikasi ke dashboard internal masing-masing user + koleksi nomor HP
         foreach ($users as $user) {
-            DB::table('notifikasis')->insert([
+            // Tampung data ke array (insert sekaligus di luar loop)
+            $dataBatchNotif[] = [
                 'user_id'     => $user->id,
                 'sender_id'   => $senderId,
                 'target_role' => 'semua', 
                 'judul'       => $request->judul,
                 'pesan'       => $request->pesan,
                 'kategori'    => 'sistem',
-                'is_read'     => 0, // 0 = Belum dibaca (mandiri per orang)
+                'is_read'     => 0,
                 'created_at'  => $now,
                 'updated_at'  => $now,
-            ]);
+            ];
 
-            // Koleksi Nomor HP Atlet untuk WhatsApp
+            // 1. Ambil nomor HP Orang Tua / Atlet dari memori
             if ($user->role == 'atlet') {
-                $atlet = \App\Models\Atlet::where('user_id', $user->id)->first();
+                $atlet = $atletsByUserId->get($user->id);
                 if ($atlet) {
                     $hpTarget = $atlet->no_hp_orang_tua ?: ($atlet->no_hp_atlet ?? '0');
                     if ($hpTarget && $hpTarget != '0') {
-                        $hpTarget = str_replace([' ', '-', '+'], '', $hpTarget);
-                        $list_nomor_hp[] = preg_replace('/^0/', '62', $hpTarget);
+                        $hpClean = preg_replace('/[^0-9]/', '', $hpTarget);
+                        $list_nomor_hp[] = preg_replace('/^0/', '62', $hpClean);
                     }
                 }
-            // Koleksi Nomor HP Pelatih untuk WhatsApp
+            // 2. Ambil nomor HP Pelatih dari memori
             } elseif ($user->role == 'pelatih') {
-                $pelatih = \App\Models\Pelatih::where('user_id', $user->id)->first();
+                $pelatih = $pelatihsByUserId->get($user->id);
                 if ($pelatih && $pelatih->no_hp) {
-                    $hpTargetPelatih = str_replace([' ', '-', '+'], '', $pelatih->no_hp);
-                    $list_nomor_hp[] = preg_replace('/^0/', '62', $hpTargetPelatih);
+                    $hpClean = preg_replace('/[^0-9]/', '', $pelatih->no_hp);
+                    $list_nomor_hp[] = preg_replace('/^0/', '62', $hpClean);
                 }
             }
         }
+
+        // Simpan semua notifikasi aplikasi secara bersamaan (Batch Insert)
+        DB::table('notifikasis')->insert($dataBatchNotif);
 
         // =========================================================================
         // 4. JALUR TEMBAK WHATSAPP GATEWAY (FONNTE DARI MOBILE BROADCAST)
