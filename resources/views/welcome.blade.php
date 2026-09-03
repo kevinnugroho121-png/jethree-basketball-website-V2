@@ -3,7 +3,22 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name', 'Jethree Basketball') }}</title>
+    
+    {{-- SEO UTAMA GOOGLE --}}
+    <title>JeThree Basketball Academy Kediri | Pembinaan Basket Usia Dini & Remaja</title>
+    <meta name="description" content="JeThree Basketball Academy adalah akademi bola basket terpercaya di Wates, Kediri. Menghadirkan pelatihan fundamental berjenjang, pelatih berlisensi, dan pemantauan rapor atlet digital.">
+    <meta name="keywords" content="jethree academy, jethree basketball, akademi basket kediri, les basket kediri, klub basket kediri, latihan basket wates kediri, pendaftaran atlet basket kediri">
+    <meta name="author" content="JeThree Basketball Academy">
+    <link rel="canonical" href="https://jethreeacademy.com">
+
+    {{-- PREVIEW MEDIA SOSIAL / WHATSAPP --}}
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://jethreeacademy.com">
+    <meta property="og:title" content="JeThree Basketball Academy Kediri">
+    <meta property="og:description" content="Cetak Prestasi, Bangun Karakter Juara. Pendaftaran atlet baru JeThree Basketball Academy telah dibuka!">
+    <meta property="og:image" content="{{ secure_asset('images/logo_j3.png') }}">
+
+    {{-- FAVICON --}}
     <link rel="icon" type="image/png" href="{{ secure_asset('images/logo_j3.png') }}">
 
     {{-- FONT: Inter & Montserrat --}}
