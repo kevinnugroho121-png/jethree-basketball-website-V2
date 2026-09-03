@@ -10,6 +10,7 @@
     <meta name="keywords" content="jethree academy, jethree basketball, akademi basket kediri, les basket kediri, klub basket kediri, latihan basket wates kediri, pendaftaran atlet basket kediri">
     <meta name="author" content="JeThree Basketball Academy">
     <link rel="canonical" href="https://jethreeacademy.com">
+    <meta name="google-site-verification" content="N5e-TVNGmnazJFrhFfwwiJ55zSywca4WTqHIaLvtLjg" />
 
     {{-- PREVIEW MEDIA SOSIAL / WHATSAPP --}}
     <meta property="og:type" content="website">
